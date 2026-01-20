@@ -1,12 +1,13 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { AccountUserPortsOut } from '../../domain/ports/out/account-user-port-out';
-import { AccountUser } from '../../domain/entity/account-user';
 import { DataSource, Repository } from 'typeorm';
 import { AccountUserOrmEntity } from '../entity/account-user-orm-entity';
 import { AccountUserMapper } from '../../application/mapper/AccountUserMapper';
 import { RegisterDto } from '../../application/dto/in/registerDto';
 import { v4 as uuidv4 } from 'uuid';
+import { AccountUserResponseDto } from '../../application/dto/out/AccountUserResponseDto';
 
 @Injectable()
 export class AuthRepository implements AccountUserPortsOut {
@@ -16,7 +17,7 @@ export class AuthRepository implements AccountUserPortsOut {
     this.userRepo = this.dataSource.getRepository(AccountUserOrmEntity);
   }
 
-  async findByUsername(username: string): Promise<AccountUser | null> {
+  async findByUsername(username: string): Promise<AccountUserResponseDto | null> {
     const rawUser = await this.dataSource
       .createQueryBuilder()
       .select('cu.*, r.nombre as rol_nombre')
@@ -25,7 +26,7 @@ export class AuthRepository implements AccountUserPortsOut {
       .where('cu.username = :username', { username })
       .getRawOne();
 
-    return rawUser ? AccountUserMapper.toDomain(rawUser) : null;
+    return rawUser ? AccountUserMapper.toAccountUserResponseDto(rawUser) : null;
   }
 
   async createAccount(data: RegisterDto): Promise<RegisterDto> {
@@ -97,11 +98,11 @@ export class AuthRepository implements AccountUserPortsOut {
     return user ? user.password : null;
   }
 
-  async findById(id: string): Promise<AccountUser | null> {
+  async findById(id: string): Promise<AccountUserResponseDto | null> {
     const user = await this.userRepo.findOne({
       where: { id },
       relations: ['rol'],
     });
-    return user ? AccountUserMapper.toDomain(user) : null;
+    return user ? AccountUserMapper.toAccountUserResponseDto(user) : null;
   }
 }
