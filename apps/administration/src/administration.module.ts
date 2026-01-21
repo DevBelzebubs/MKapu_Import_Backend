@@ -6,6 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AdministrationController } from './administration.controller';
 import { AdministrationService } from './administration.service';
 import { UserModule } from './core/user/user.module';
+import { UserOrmEntity } from './core/user/infrastructure/entity/user-orm.entity';
+import { SedeOrmEntity } from './core/headquarters/infrastructure/entity/sede-orm.entity';
 
 @Module({
   imports: [
@@ -23,12 +25,11 @@ import { UserModule } from './core/user/user.module';
         host: configService.get('ADMIN_DB_HOST'),
         port: configService.get<number>('ADMIN_DB_PORT'),
         username: configService.get('ADMIN_DB_USERNAME'),
-        password: configService.get('ADMIN_DB_PASSWORD'),
+        password: configService.get('ADMIN_DB_PASSWORD') || '',
         database: configService.get('ADMIN_DB_DATABASE'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get<boolean>('ADMIN_DB_SYNCHRONIZE'),
-        logging: configService.get<boolean>('ADMIN_DB_LOGGING'),
-        timezone: 'Z',
+        entities: [UserOrmEntity, SedeOrmEntity],
+        synchronize: false,
+        logging: true,
       }),
       inject: [ConfigService],
     }),
