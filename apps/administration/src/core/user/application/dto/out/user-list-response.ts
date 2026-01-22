@@ -7,6 +7,6 @@ import { UserResponseDto } from './user-response-dto';
 export interface UserListResponse {
   users: UserResponseDto[];
   total: number;
-  page?: number;             // Paginación opcional
+  page?: number;
   pageSize?: number;
 }

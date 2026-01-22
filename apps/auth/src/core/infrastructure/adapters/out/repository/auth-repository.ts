@@ -1,13 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* auth/src/core/infrastructure/repository/auth-repository.ts */
 
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
-import { AccountUserPortsOut } from '../../domain/ports/out/account-user-port-out';
+import { AccountUserPortsOut } from 'apps/auth/src/core/domain/ports/out/account-user-port-out';
+import { AccountUserOrmEntity, UserOrmEntity } from '../../../entity/account-user-orm-entity';
 import { DataSource, Repository } from 'typeorm';
-import { AccountUserOrmEntity, UserOrmEntity } from '../entity/account-user-orm-entity';
-import { AccountUserMapper } from '../../application/mapper/AccountUserMapper';
-import { AccountUserResponseDto } from '../../application/dto/out/AccountUserResponseDto';
+import { AccountUser } from 'apps/auth/src/core/domain/entity/account-user';
+import { AccountUserMapper } from 'apps/auth/src/core/application/mapper/AccountUserMapper';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthRepository implements AccountUserPortsOut {
@@ -16,29 +18,34 @@ export class AuthRepository implements AccountUserPortsOut {
   constructor(private readonly dataSource: DataSource) {
     this.userRepo = this.dataSource.getRepository(AccountUserOrmEntity);
   }
-  async findByUsername(username: string): Promise<AccountUserResponseDto | null> {
+  async findByUsername(username: string): Promise<AccountUser | null> {
     const userEntity = await this.userRepo.findOne({
-      where: { username, activo: 1 },
+      where: { nom_usu: username, activo: true },
       relations: ['usuario', 'roles'],
     });
 
-    return userEntity ? AccountUserMapper.toAccountUserResponseDto(userEntity) : null;
+    return userEntity ? AccountUserMapper.toDomainEntity(userEntity) : null;
   }
 
-  async createAccount(data: { userId: number; username: string; password: string }): Promise<void> {
+  async createAccount(data: { userId: number; username: string; password: string }): Promise<AccountUser> {
     const newAccount = this.userRepo.create({
-      username: data.username,
-      password: data.password,
-      activo: 1,
+      id_cuenta: uuidv4(), // Generamos ID manualmente ya que es VARCHAR(255)
+      nom_usu: data.username,
+      contraseña: data.password,
+      // 'email_emp' e 'id_sede' son NOT NULL en tu script. Debes definirlos.
+      // Aquí pongo valores por defecto, pero deberías recibirlos en 'data' si es posible.
+      email_emp: `${data.username}@empresa.com`, 
+      id_sede: 1, 
+      activo: true,
+      ultimo_acceso: new Date(),
     });
-
     const userRef = new UserOrmEntity();
     userRef.id_usuario = data.userId;
 
     newAccount.usuario = userRef;
-
     try {
       await this.userRepo.save(newAccount);
+      return AccountUserMapper.toDomainEntity(newAccount);
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
         throw new Error('El username ya está en uso');
@@ -47,13 +54,13 @@ export class AuthRepository implements AccountUserPortsOut {
     }
   }
 
-  async findById(id: string): Promise<AccountUserResponseDto | null> {
+  async findById(id: string): Promise<AccountUser | null> {
     const userEntity = await this.userRepo.findOne({
-      where: { id_cuenta_usuario: id },
+      where: { id_cuenta: id },
       relations: ['usuario', 'roles'],
     });
 
-    return userEntity ? AccountUserMapper.toAccountUserResponseDto(userEntity) : null;
+    return userEntity ? AccountUserMapper.toDomainEntity(userEntity) : null;
   }
 
   async updateLastAccess(accountId: string): Promise<void> {
@@ -61,16 +68,16 @@ export class AuthRepository implements AccountUserPortsOut {
   }
 
   async updatePassword(id: string, newPassword: string): Promise<void> {
-    const result = await this.userRepo.update(id, { password: newPassword });
+    const result = await this.userRepo.update(id, { contraseña: newPassword });
     if (result.affected === 0) throw new Error('Usuario no encontrado.');
   }
 
   async getPasswordById(id: string): Promise<string | null> {
     const user = await this.userRepo.findOne({
-      where: { id_cuenta_usuario: id },
-      select: ['password'],
+      where: { id_cuenta: id },
+      select: ['contraseña'],
     });
-    return user ? user.password : null;
+    return user ? user.contraseña : null;
   }
 
   async getProfileData(id: string): Promise<any> {

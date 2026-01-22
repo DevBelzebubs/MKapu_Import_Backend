@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PasswordHasherPort } from '../../domain/ports/out/password-hash-port-out';
+import { PasswordHasherPort } from '../../../domain/ports/out/password-hash-port-out';
 
 @Injectable()
 export class BcryptHasherAdapter implements PasswordHasherPort {

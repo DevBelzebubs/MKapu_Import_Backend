@@ -1,14 +1,14 @@
 /* auth/src/core/domain/ports/out/account-user-port-out.ts */
-import { AccountUserResponseDto } from '../../../application/dto/out/AccountUserResponseDto';
+import { AccountUser } from '../../entity/account-user';
 
 export interface AccountUserPortsOut {
-  findByUsername(username: string): Promise<AccountUserResponseDto | null>;
+  findByUsername(username: string): Promise<AccountUser | null>;
 
   createAccount(data: {
     userId: number;
     username: string;
     password: string;
-  }): Promise<void>;
+  }): Promise<AccountUser>;
 
   updateLastAccess(accountId: string): Promise<void>;
 
@@ -18,5 +18,5 @@ export interface AccountUserPortsOut {
 
   getPasswordById(id: string): Promise<string | null>;
 
-  findById(id: string): Promise<AccountUserResponseDto | null>;
+  findById(id: string): Promise<AccountUser | null>;
 }

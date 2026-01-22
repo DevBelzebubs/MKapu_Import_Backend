@@ -1,10 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AccountUserPortsIn } from '../../domain/ports/in/account-user-port.in';
 import { LoginDto } from '../dto/in/loginDto';
 import { JwtService } from '@nestjs/jwt';
-import { AuthRepository } from '../../infrastructure/repository/auth-repository';
 import { LoginResponseDto } from '../dto/out/LoginResponseDto';
 import { PasswordHasherPort } from '../../domain/ports/out/password-hash-port-out';
+import { AccountUserResponseDto } from '../dto/out/AccountUserResponseDto';
+import { AccountUserMapper } from '../mapper/AccountUserMapper';
+import { AuthRepository } from '../../infrastructure/adapters/out/repository/auth-repository';
 
 @Injectable()
 export class AuthService implements AccountUserPortsIn {
@@ -56,13 +61,15 @@ export class AuthService implements AccountUserPortsIn {
     userId: number,
     username: string,
     passwordRaw: string,
-  ): Promise<any> {
+  ): Promise<AccountUserResponseDto> {
     const hashedPassword = await this.passwordHasher.hashPassword(passwordRaw);
     // 2. Mandar a guardar al repositorio
-    await this.repository.createAccount({
+    const account = await this.repository.createAccount({
       userId,
       username,
       password: hashedPassword,
     });
+    const accountOrmEntity = AccountUserMapper.toOrmEntity(account);
+    return AccountUserMapper.toAccountUserResponseDto(accountOrmEntity);
   }
 }

@@ -1,11 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* auth/src/core/infrastructure/controllers/auth.controller.ts */
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { LoginResponseDto } from '../../application/dto/out/LoginResponseDto';
-import { LoginDto } from '../../application/dto/in/loginDto';
-import { AuthService } from '../../application/service/auth-service';
-import { CreateAccountDto } from '../../application/dto/in/createAccountDto';
+import { CreateAccountDto } from 'apps/auth/src/core/application/dto/in/createAccountDto';
+import { LoginDto } from 'apps/auth/src/core/application/dto/in/loginDto';
+import { AccountUserResponseDto } from 'apps/auth/src/core/application/dto/out/AccountUserResponseDto';
+import { LoginResponseDto } from 'apps/auth/src/core/application/dto/out/LoginResponseDto';
+import { AuthService } from 'apps/auth/src/core/application/service/auth-service';
+
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -28,7 +32,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Crear credenciales para un usuario existente' })
   @ApiResponse({ status: 201, description: 'Cuenta creada exitosamente' })
   @ApiResponse({ status: 409, description: 'El username ya existe' })
-  async createAccount(@Body() dto: CreateAccountDto) {
+  async createAccount(@Body() dto: CreateAccountDto): Promise<AccountUserResponseDto> {
     return this.authService.createAccountForUser(
       dto.userId,
       dto.username,

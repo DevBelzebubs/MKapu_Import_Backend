@@ -7,7 +7,7 @@ import { AdministrationController } from './administration.controller';
 import { AdministrationService } from './administration.service';
 import { UserModule } from './core/user/user.module';
 import { UserOrmEntity } from './core/user/infrastructure/entity/user-orm.entity';
-import { SedeOrmEntity } from './core/headquarters/infrastructure/entity/sede-orm.entity';
+import { HeadquartersOrmEntity } from './core/headquarters/infrastructure/entity/headquarters-orm.entity';
 
 @Module({
   imports: [
@@ -27,8 +27,8 @@ import { SedeOrmEntity } from './core/headquarters/infrastructure/entity/sede-or
         username: configService.get('ADMIN_DB_USERNAME'),
         password: configService.get('ADMIN_DB_PASSWORD') || '',
         database: configService.get('ADMIN_DB_DATABASE'),
-        entities: [UserOrmEntity, SedeOrmEntity],
-        synchronize: false,
+        entities: [UserOrmEntity, HeadquartersOrmEntity],
+        synchronize: true,
         logging: true,
       }),
       inject: [ConfigService],

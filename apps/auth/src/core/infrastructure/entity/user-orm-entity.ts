@@ -1,24 +1,45 @@
-/* auth/src/core/infrastructure/entity/user-orm-entity.ts */
-import { Column, Entity, OneToOne } from 'typeorm';
-import { AccountUserOrmEntity } from './account-user-orm-entity';
+/* eslint-disable prettier/prettier */
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity('usuario', { synchronize: false })
+@Entity({ name: 'usuario', schema: 'mkp_administracion', synchronize: false })
 export class UserOrmEntity {
-  @Column({ name: 'id_usuario', primary: true })
+  @PrimaryColumn({ name: 'id_usuario', type: 'int' })
   id_usuario: number;
 
-  @Column({ name: 'email' })
-  email: string;
+  @Column({ name: 'nombres', type: 'varchar', length: 100 })
+  nombres: string;
 
-  @Column({ name: 'usu_nom' })
-  usu_nom: string;
+  @Column({ name: 'ape_pat', type: 'varchar', length: 50 })
+  ape_pat: string;
 
-  @Column({ name: 'dni' })
+  @Column({ name: 'ape_mat', type: 'varchar', length: 50 })
+  ape_mat: string;
+
+  @Column({ name: 'dni', type: 'varchar', length: 8 })
   dni: string;
 
-  @Column({ name: 'id_sede', type: 'int', nullable: true })
-  id_sede: number;
+  @Column({ name: 'email', type: 'varchar', length: 150, nullable: true })
+  email: string;
 
-  @OneToOne(() => AccountUserOrmEntity, (account) => account.usuario)
-  cuenta: AccountUserOrmEntity;
+  @Column({ name: 'celular', type: 'varchar', length: 9, nullable: true })
+  celular: string;
+
+  @Column({ name: 'direccion', type: 'varchar', length: 100, nullable: true })
+  direccion: string;
+
+  @Column({ name: 'genero', type: 'char', length: 1, nullable: true })
+  genero: string;
+
+  @Column({ name: 'fec_nac', type: 'datetime' })
+  fec_nac: Date;
+
+  @Column({
+    name: 'activo',
+    type: 'bit',
+    transformer: {
+      from: (value: Buffer | number) => value === 1 || (Buffer.isBuffer(value) && value[0] === 1),
+      to: (value: boolean) => (value ? 1 : 0),
+    },
+  })
+  activo: boolean;
 }

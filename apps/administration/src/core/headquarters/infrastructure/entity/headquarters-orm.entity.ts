@@ -6,7 +6,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { UserOrmEntity } from '../../../user/infrastructure/entity/user-orm.entity';
 
 @Entity('sede')
-export class SedeOrmEntity {
+export class HeadquartersOrmEntity {
   @PrimaryGeneratedColumn({ name: 'id_sede' })
   id_sede: number;
 

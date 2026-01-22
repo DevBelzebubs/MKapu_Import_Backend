@@ -6,40 +6,52 @@ import {
   OneToOne,
   JoinTable,
   ManyToMany,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
 } from 'typeorm';
 import { UserOrmEntity } from './user-orm-entity';
 import { RoleOrmEntity } from './role-orm-entity';
+import { BitToBooleanTransformer } from 'libs/common/src/infrastructure/transformers/bit-to-boolean.transformer';
 
-@Entity('cuenta_usuario')
+@Entity({ name: 'cuenta_usuario', schema: 'mkp_administracion' })
 export class AccountUserOrmEntity {
-  @PrimaryGeneratedColumn('uuid', { name: 'id_cuenta' })
-  id_cuenta_usuario: string;
+  @PrimaryColumn({ name: 'id_cuenta', length: 255 })
+  id_cuenta: string;
 
-  @Column({ name: 'username', type: 'varchar', length: 50, unique: true })
-  username: string;
-
-  @Column({ name: 'password', type: 'varchar', length: 255 })
-  password: string;
-
-  @Column({ name: 'activo', type: 'tinyint', default: 1 })
-  activo: number;
-
-  @Column({ name: 'ultimo_acceso', type: 'datetime', nullable: true })
-  ultimo_acceso: Date;
-
-  @OneToOne(() => UserOrmEntity, (user) => user.cuenta)
+  @OneToOne(() => UserOrmEntity)
   @JoinColumn({ name: 'id_usuario' })
   usuario: UserOrmEntity;
 
-  @ManyToMany(() => RoleOrmEntity, (role) => role.cuentas)
+  @Column({ name: 'id_usuario' })
+  id_usuario_val: number;
+
+  @Column({ name: 'id_sede' })
+  id_sede: number;
+
+  @Column({ name: 'nom_usu', length: 50 })
+  nom_usu: string;
+
+  @Column({ name: 'contraseña', length: 255 })
+  contraseña: string;
+
+  @Column({ name: 'email_emp', length: 150 })
+  email_emp: string;
+
+  @Column({
+    name: 'activo',
+    type: 'bit',
+    width: 1,
+    transformer: BitToBooleanTransformer,
+    default: () => "b'1'",
+  })
+  activo: boolean;
+  @Column({ name: 'ultimo_acceso', type: 'datetime' })
+  ultimo_acceso: Date;
+
+  @ManyToMany(() => RoleOrmEntity)
   @JoinTable({
-    name: 'cuenta_usuario_roles', // Nombre de la tabla intermedia
-    joinColumn: {
-      name: 'id_cuenta_usuario',
-      referencedColumnName: 'id_cuenta_usuario',
-    },
-    inverseJoinColumn: { name: 'id_rol', referencedColumnName: 'id' },
+    name: 'cuenta_rol',
+    joinColumn: { name: 'id_cuenta', referencedColumnName: 'id_cuenta' },
+    inverseJoinColumn: { name: 'id_rol', referencedColumnName: 'id_rol' },
   })
   roles: RoleOrmEntity[];
 }

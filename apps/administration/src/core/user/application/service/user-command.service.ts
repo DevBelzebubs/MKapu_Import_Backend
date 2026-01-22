@@ -10,15 +10,8 @@ import {
 } from '@nestjs/common';
 import { IUserCommandPort } from '../../domain/ports/in/user-port-in';
 import { IUserRepositoryPort } from '../../domain/ports/out/user-port-out';
-import {
-  RegisterUserDto,
-  UpdateUserDto,
-  ChangeUserStatusDto,
-} from '../dto/in';
-import {
-  UserResponseDto,
-  UserDeletedResponseDto,
-} from '../dto/out';
+import { RegisterUserDto, UpdateUserDto, ChangeUserStatusDto } from '../dto/in';
+import { UserResponseDto, UserDeletedResponseDto } from '../dto/out';
 import { UserMapper } from '../mapper/user.mapper';
 
 @Injectable()

@@ -1,16 +1,16 @@
 /* auth/src/auth.module.ts */
 /* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
-import { BcryptHasherAdapter } from './core/infrastructure/adapters/bcrypt-hash-adapter';
+import { BcryptHasherAdapter } from './core/infrastructure/adapters/out/bcrypt-hash-adapter';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AccountUserOrmEntity, UserOrmEntity } from './core/infrastructure/entity/account-user-orm-entity';
 import { JwtModule } from '@nestjs/jwt';
-import { AuthRepository } from './core/infrastructure/repository/auth-repository';
-import { HeadQuartersOrmEntity } from './core/infrastructure/entity/headquarters-orm-entity';
 import { RoleOrmEntity } from './core/infrastructure/entity/role-orm-entity';
-import { AuthController } from './core/infrastructure/controllers/auth.controller';
 import { AuthService } from './core/application/service/auth-service';
+import { AuthController } from './core/infrastructure/adapters/in/controllers/auth.controller';
+import { AuthRepository } from './core/infrastructure/adapters/out/repository/auth-repository';
+import { PermissionOrmEntity } from 'apps/administration/src/core/permission/infrastructure/entity/permission-orm-entity';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -27,7 +27,7 @@ import { AuthService } from './core/application/service/auth-service';
         password: configService.get<string>('AUTH_DB_PASSWORD') || '',
         database: configService.get<string>('AUTH_DB_NAME'),
         // Carga todas las entidades
-        entities: [AccountUserOrmEntity, UserOrmEntity, RoleOrmEntity, HeadQuartersOrmEntity],
+        entities: [AccountUserOrmEntity, UserOrmEntity, RoleOrmEntity,PermissionOrmEntity],
         synchronize: true,
         logging: true,
       }),

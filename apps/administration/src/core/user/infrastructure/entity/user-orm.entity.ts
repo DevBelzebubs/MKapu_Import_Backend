@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* ============================================
    administration/src/core/user/infrastructure/entity/user-orm.entity.ts
    ============================================ */
@@ -9,15 +10,16 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { SedeOrmEntity } from '../../../headquarters/infrastructure/entity/sede-orm.entity';
+import { HeadquartersOrmEntity } from '../../../headquarters/infrastructure/entity/headquarters-orm.entity';
+import { BitToBooleanTransformer } from 'libs/common/src/infrastructure/transformers/bit-to-boolean.transformer';
 
-@Entity('usuario')
+@Entity({ name: 'usuario', schema: 'mkp_administracion' })
 export class UserOrmEntity {
   @PrimaryGeneratedColumn({ name: 'id_usuario' })
   id_usuario: number;
 
-  @Column({ name: 'usu_nom', type: 'varchar', length: 50 })
-  usu_nom: string;
+  @Column({ name: 'nombres', length: 100 })
+  nombres: string;
 
   @Column({ name: 'ape_mat', type: 'varchar', length: 50 })
   ape_mat: string;
@@ -28,7 +30,7 @@ export class UserOrmEntity {
   @Column({ name: 'dni', type: 'varchar', length: 8, unique: true })
   dni: string;
 
-  @Column({ name: 'email', type: 'varchar', length: 150, unique: true })
+  @Column({ name: 'email', type: 'varchar', length: 150, nullable: true })
   email: string;
 
   @Column({ name: 'celular', type: 'varchar', length: 9 })
@@ -43,14 +45,20 @@ export class UserOrmEntity {
   @Column({ name: 'fec_nac', type: 'datetime' })
   fec_nac: Date;
 
-  @Column({ name: 'activo', type: 'tinyint', default: 1 })
-  activo: number; // 1 = true, 0 = false
+  @Column({
+    name: 'activo',
+    type: 'bit',
+    width: 1,
+    transformer: BitToBooleanTransformer,
+    default: () => "b'1'",
+  })
+  activo: boolean;
 
   @Column({ name: 'id_sede', type: 'int', nullable: true })
   id_sede: number;
 
   // Relación con Sede
-  @ManyToOne(() => SedeOrmEntity, (sede) => sede.usuarios, { nullable: true })
+  @ManyToOne(() => HeadquartersOrmEntity, (headquarters) => headquarters.usuarios, { nullable: true })
   @JoinColumn({ name: 'id_sede' })
-  sede?: SedeOrmEntity;
+  sede?: HeadquartersOrmEntity;
 }

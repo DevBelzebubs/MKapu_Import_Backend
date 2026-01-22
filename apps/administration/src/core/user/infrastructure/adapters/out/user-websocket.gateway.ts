@@ -18,9 +18,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Inject } from '@nestjs/common';
-import { IUserQueryPort } from '../../domain/ports/in/user-port-in';
-import { ListUserFilterDto } from '../../application/dto/in';
-import { UserResponseDto, UserListResponse } from '../../application/dto/out';
+import { IUserQueryPort } from '../../../domain/ports/in/user-port-in';
+import { UserResponseDto } from '../../../application/dto/out/user-response-dto';
 
 @WebSocketGateway({
   namespace: '/users',

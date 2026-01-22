@@ -1,15 +1,42 @@
 /* auth/src/core/infrastructure/entity/role-orm-entity.ts */
 
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { AccountUserOrmEntity } from './account-user-orm-entity';
+import { PermissionOrmEntity } from 'apps/administration/src/core/permission/infrastructure/entity/permission-orm-entity';
 
-@Entity('roles')
+@Entity({ name: 'rol', schema: 'mkp_administracion' })
 export class RoleOrmEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ name: 'id_rol' })
+  id_rol: number;
 
-  @Column()
+  @Column({ name: 'nombre', length: 45 })
   nombre: string;
-  @ManyToMany(() => AccountUserOrmEntity, (account) => account.roles)
-  cuentas: AccountUserOrmEntity[];
+
+  @ManyToMany(() => AccountUserOrmEntity)
+  @JoinTable({
+    name: 'cuenta_rol',
+    joinColumn: { name: 'id_rol', referencedColumnName: 'id_rol' },
+    inverseJoinColumn: { name: 'id_cuenta', referencedColumnName: 'id_cuenta' },
+  })
+  accounts: AccountUserOrmEntity[];
+
+  @ManyToMany(() => PermissionOrmEntity)
+  @JoinTable({
+    name: 'rol_permiso',
+    joinColumn: {
+      name: 'id_rol',
+      referencedColumnName: 'id_rol',
+    },
+    inverseJoinColumn: {
+      name: 'id_permiso',
+      referencedColumnName: 'id_permiso',
+    },
+  })
+  permisos: PermissionOrmEntity[];
 }

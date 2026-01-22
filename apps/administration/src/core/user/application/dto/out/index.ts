@@ -1,4 +1,3 @@
-
 /* ============================================
    administration/src/core/user/application/dto/out/index.ts
    ============================================ */

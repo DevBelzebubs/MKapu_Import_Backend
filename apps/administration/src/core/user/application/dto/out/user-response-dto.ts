@@ -7,7 +7,7 @@ export interface UserResponseDto {
   usu_nom: string;
   ape_mat: string;
   ape_pat: string;
-  nombreCompleto: string;    // Nombre completo calculado
+  nombreCompleto: string;
   dni: string;
   email: string;
   celular: string;
@@ -16,5 +16,5 @@ export interface UserResponseDto {
   fec_nac: Date;
   activo: boolean;
   id_sede?: number;
-  sedeNombre?: string;       // Nombre de la sede (join)
+  sedeNombre?: string;
 }

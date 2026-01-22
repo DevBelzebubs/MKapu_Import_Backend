@@ -17,22 +17,10 @@ import {
   Get,
   Query,
 } from '@nestjs/common';
-import {
-  IUserCommandPort,
-  IUserQueryPort,
-} from '../../domain/ports/in/user-port-in';
-import {
-  RegisterUserDto,
-  UpdateUserDto,
-  ChangeUserStatusDto,
-  ListUserFilterDto,
-} from '../../application/dto/in';
-import {
-  UserResponseDto,
-  UserDeletedResponseDto,
-  UserListResponse,
-} from '../../application/dto/out';
-import { UserWebSocketGateway } from '../adapters/user-websocket.gateway';
+import { IUserCommandPort, IUserQueryPort } from '../../../../domain/ports/in/user-port-in';
+import { UserWebSocketGateway } from '../../out/user-websocket.gateway';
+import { ChangeUserStatusDto, ListUserFilterDto, RegisterUserDto, UpdateUserDto } from '../../../../application/dto/in';
+import { UserDeletedResponseDto, UserListResponse, UserResponseDto } from '../../../../application/dto/out';
 
 @Controller('users')
 export class UserRestController {
