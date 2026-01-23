@@ -8,9 +8,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IRoleRepositoryPort } from '../../domain/ports/out/role-port-out';
-import { Role } from '../../domain/entity/role-domain-entity';
-import { RoleOrmEntity } from '../entity/role-orm.entity';
+import { RoleOrmEntity } from '../../../entity/role-orm.entity';
+import { IRoleRepositoryPort } from '../../../../domain/ports/out/role-port-out';
+import { Role } from '../../../../domain/entity/role-domain-entity';
 
 @Injectable()
 export class RoleRepository implements IRoleRepositoryPort {

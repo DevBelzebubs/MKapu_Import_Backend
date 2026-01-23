@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* administration/src/administration.module.ts */
 
 import { Module } from '@nestjs/common';
@@ -8,6 +9,8 @@ import { AdministrationService } from './administration.service';
 import { UserModule } from './core/user/user.module';
 import { UserOrmEntity } from './core/user/infrastructure/entity/user-orm.entity';
 import { HeadquartersOrmEntity } from './core/headquarters/infrastructure/entity/headquarters-orm.entity';
+import { RoleOrmEntity } from './core/role/infrastructure/entity/role-orm.entity';
+import { PermissionOrmEntity } from './core/permission/infrastructure/entity/permission-orm.entity';
 
 @Module({
   imports: [
@@ -27,8 +30,8 @@ import { HeadquartersOrmEntity } from './core/headquarters/infrastructure/entity
         username: configService.get('ADMIN_DB_USERNAME'),
         password: configService.get('ADMIN_DB_PASSWORD') || '',
         database: configService.get('ADMIN_DB_DATABASE'),
-        entities: [UserOrmEntity, HeadquartersOrmEntity],
-        synchronize: false,
+        entities: [UserOrmEntity, HeadquartersOrmEntity, RoleOrmEntity, PermissionOrmEntity],
+        synchronize: true,
         logging: true,
       }),
       inject: [ConfigService],

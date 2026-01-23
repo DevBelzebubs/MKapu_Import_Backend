@@ -7,13 +7,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Infrastructure
 import { RoleOrmEntity } from './infrastructure/entity/role-orm.entity';
-import { RoleRepository } from './infrastructure/repository/role.repository';
-import { RoleRestController } from './infrastructure/controllers/role-rest.controller';
 import { RoleWebSocketGateway } from './infrastructure/adapters/out/role-websocket.gateway';
 
 // Application
 import { RoleCommandService } from './application/service/role-command.service';
 import { RoleQueryService } from './application/service/role-query.service';
+import { RoleRestController } from './infrastructure/adapters/in/controllers/role-rest.controller';
+import { RoleRepository } from './infrastructure/adapters/out/repository/role.repository';
 
 @Module({
   imports: [

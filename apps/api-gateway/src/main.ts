@@ -6,43 +6,43 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  // Microservicio de Autenticación
+
+  const authUrl = process.env.AUTH_SERVICE_URL ?? 'http://localhost:3001';
+  const adminUrl = process.env.ADMIN_SERVICE_URL ?? 'http://localhost:3002';
+  const salesUrl = process.env.SALES_SERVICE_URL ?? 'http://localhost:3003';
+  const logisticsUrl = process.env.LOGISTICS_SERVICE_URL ?? 'http://localhost:3004';
   app.use(
     '/auth',
     createProxyMiddleware({
-      target: 'http://localhost:3001/auth',
+      target: `${authUrl}`, 
       changeOrigin: true,
-      //pathRewrite: { '^/auth': '' },
+      // pathRewrite: { '^/auth': '' },
     }),
   );
   
-  // Microservicio de Administración
   app.use(
     '/admin', 
     createProxyMiddleware({
-      target: 'http://localhost:3002',
+      target: `${adminUrl}`,
       changeOrigin: true,
       ws:true,
       pathRewrite: { '^/admin': '' },
     }),
   );
   
-  // Microservicio de Ventas
   app.use(
     '/sales',
     createProxyMiddleware({
-      target: 'http://localhost:3003',
+      target: `${salesUrl}`,
       changeOrigin: true,
       pathRewrite: { '^/sales': '' },
     }),
   );
   
-  // Microservicio de Logística
   app.use(
     '/logistics',
     createProxyMiddleware({
-      target: 'http://localhost:3004',
+      target: `${logisticsUrl}`,
       changeOrigin: true,
       pathRewrite: { '^/logistics': '' },
     }),

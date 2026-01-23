@@ -1,11 +1,10 @@
-
 /* ============================================
    administration/src/core/permission/infrastructure/entity/permission-orm.entity.ts
    ============================================ */
 
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity({ name: 'permisos', schema: 'mkp_administracion' })
+@Entity({ name: 'permiso', schema: 'mkp_administracion' })
 export class PermissionOrmEntity {
   @PrimaryGeneratedColumn({ name: 'id_permiso' })
   id_permiso: number;
@@ -16,6 +15,6 @@ export class PermissionOrmEntity {
   @Column({ name: 'descripcion', type: 'varchar', length: 45, nullable: true })
   descripcion: string;
 
-  @Column({ name: 'activo', type: 'bit', width: 1, default: 1 })
+  @Column({ name: 'activo', type: 'tinyint', width: 1, default: 1 })
   activo: boolean;
 }

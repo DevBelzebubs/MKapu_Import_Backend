@@ -4,9 +4,10 @@ services:
     container_name: mysql_db
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: mkapu_inventory_db
     ports:
       - "3307:3306"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - mkapu_network
     healthcheck:
@@ -26,8 +27,9 @@ services:
       - AUTH_DB_PORT=3306
       - AUTH_DB_USERNAME=root
       - AUTH_DB_PASSWORD=root
-      - AUTH_DB_DATABASE=mkapu_inventory_db
+      - AUTH_DB_DATABASE=mkp_administracion
       - PORT=3001
+      - JWT_SECRET=mkapu_secret_2025
     depends_on:
       mysql_db:
         condition: service_healthy
@@ -45,7 +47,7 @@ services:
       - ADMIN_DB_PORT=3306
       - ADMIN_DB_USERNAME=root
       - ADMIN_DB_PASSWORD=root
-      - ADMIN_DB_DATABASE=mkapu_inventory_db 
+      - ADMIN_DB_DATABASE=mkp_administracion
       - PORT=3002
     depends_on:
       mysql_db:
@@ -60,12 +62,54 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - AUTH_SERVICE_HOST=auth_service
-      - ADMIN_SERVICE_HOST=admin_service
+      - AUTH_SERVICE_URL=http://auth_service:3001
+      - ADMIN_SERVICE_URL=http://admin_service:3002
+      - SALES_SERVICE_URL=http://sales_service:3004
+      - LOGISTICS_SERVICE_URL=http://logistics_service:3003
       - PORT=3000
     depends_on:
       - auth_service
       - admin_service
+      - sales_service
+      - logistics_service
+    networks:
+      - mkapu_network
+
+  logistics_service:
+    build:
+      context: .
+      dockerfile: ./apps/logistics/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - LOGISTICS_DB_HOST=mysql_db
+      - LOGISTICS_DB_PORT=3306
+      - LOGISTICS_DB_USERNAME=root
+      - LOGISTICS_DB_PASSWORD=root
+      - LOGISTICS_DB_DATABASE=mkp_logistica
+      - PORT=3003
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    networks:
+      - mkapu_network
+
+  sales_service:
+    build:
+      context: .
+      dockerfile: ./apps/sales/Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - SALES_DB_HOST=mysql_db
+      - SALES_DB_PORT=3306
+      - SALES_DB_USERNAME=root
+      - SALES_DB_PASSWORD=root
+      - SALES_DB_DATABASE=mkp_ventas 
+      - PORT=3004
+    depends_on:
+      mysql_db:
+        condition: service_healthy
     networks:
       - mkapu_network
 
