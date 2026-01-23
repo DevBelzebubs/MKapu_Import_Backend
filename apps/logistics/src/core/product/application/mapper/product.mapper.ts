@@ -1,0 +1,1 @@
+//logistics/src/core/product/application/mapper/product.mapper.ts

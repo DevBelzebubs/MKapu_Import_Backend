@@ -1,0 +1,1 @@
+//logistics/src/core/product/infrastructure/adapters/in/controllers/product-rest.controller.ts  

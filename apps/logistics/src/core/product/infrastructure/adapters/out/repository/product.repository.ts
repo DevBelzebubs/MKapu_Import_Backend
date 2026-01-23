@@ -1,0 +1,1 @@
+//logistics/src/core/product/infrastructure/adapters/out/repository/product.repository.ts   
