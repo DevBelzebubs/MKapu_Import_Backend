@@ -2,25 +2,20 @@
 /* ============================================
    logistics/src/core/catalog/category/infrastructure/entity/category-orm.entity.ts
    ============================================ */
+import { Entity, PrimaryColumn, Column } from 'typeorm';
 
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-// import { ProductOrmEntity } from '../../../product/infrastructure/entity/product-orm.entity';
-
-@Entity({ name: 'categoria', schema: 'mkp_logistica' })
+@Entity({ name: 'categoria', schema: 'mkp_logistica', synchronize: false })
 export class CategoryOrmEntity {
-  @PrimaryGeneratedColumn({ name: 'id_categoria' })
+
+  @PrimaryColumn({ name: 'id_categoria', type: 'int' })
   id_categoria: number;
 
-  @Column({ name: 'nombre', type: 'varchar', length: 50, unique: true })
+  @Column({ name: 'nombre', type: 'varchar', length: 50 })
   nombre: string;
 
-  @Column({ name: 'descripcion', type: 'varchar', length: 50, nullable: true })
+  @Column({ name: 'descripcion', type: 'varchar', length: 50 })
   descripcion: string;
 
-  @Column({ name: 'activo', type: 'bit', width: 1, default: 1 })
+  @Column({ name: 'activo', type: 'bit', width: 1 })
   activo: boolean;
-
-  // Relación inversa con productos (cuando crees el módulo Product)
-  // @OneToMany(() => ProductOrmEntity, (product) => product.category)
-  // products?: ProductOrmEntity[];
 }

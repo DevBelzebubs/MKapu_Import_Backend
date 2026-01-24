@@ -6,11 +6,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AdministrationController } from './administration.controller';
 import { AdministrationService } from './administration.service';
+
 import { UserModule } from './core/user/user.module';
 import { UserOrmEntity } from './core/user/infrastructure/entity/user-orm.entity';
 import { HeadquartersOrmEntity } from './core/headquarters/infrastructure/entity/headquarters-orm.entity';
 import { RoleOrmEntity } from './core/role/infrastructure/entity/role-orm.entity';
-import { PermissionOrmEntity } from './core/permission/infrastructure/entity/permission-orm.entity';
+  import { PermissionOrmEntity } from './core/permission/infrastructure/entity/permission-orm.entity';
+import { PermissionModule } from './core/permission/permission.module';
+import { RoleModule } from './core/role/role.module';
 
 @Module({
   imports: [
@@ -39,6 +42,8 @@ import { PermissionOrmEntity } from './core/permission/infrastructure/entity/per
 
     // Módulos del microservicio
     UserModule,
+    RoleModule,
+    PermissionModule,
   ],
   controllers: [AdministrationController],
   providers: [AdministrationService],
