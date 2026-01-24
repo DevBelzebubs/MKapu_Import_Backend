@@ -4,6 +4,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LogisticsController } from './logistics.controller';
 import { LogisticsService } from './logistics.service';
 
+//módulos
+import { CategoryModule } from './core/catalog/category/category.module';
+
+
 @Module({
   imports: [
     // Configuración de variables de entorno
@@ -31,6 +35,8 @@ import { LogisticsService } from './logistics.service';
     }),
 
     // Aquí puedes agregar otros módulos específicos de logistics
+    CategoryModule,
+
   ],
   controllers: [LogisticsController],
   providers: [LogisticsService],

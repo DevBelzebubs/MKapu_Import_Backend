@@ -5,17 +5,18 @@
 
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,  
   Column,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { HeadquartersOrmEntity } from '../../../headquarters/infrastructure/entity/headquarters-orm.entity';
 import { BitToBooleanTransformer } from 'libs/common/src/infrastructure/transformers/bit-to-boolean.transformer';
 
 @Entity({ name: 'usuario', schema: 'mkp_administracion' })
 export class UserOrmEntity {
-  @PrimaryGeneratedColumn({ name: 'id_usuario' })
+  @PrimaryColumn({ name: 'id_usuario', type: 'int' })
   id_usuario: number;
 
   @Column({ name: 'nombres', length: 100 })

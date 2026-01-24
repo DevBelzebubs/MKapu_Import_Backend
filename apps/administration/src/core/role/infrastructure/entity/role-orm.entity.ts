@@ -2,16 +2,24 @@
    administration/src/core/role/infrastructure/entity/role-orm.entity.ts
    ============================================ */
 
-import { BitToBooleanTransformer } from 'libs/common/src/infrastructure/transformers/bit-to-boolean.transformer';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { 
+  BitToBooleanTransformer 
+} from 'libs/common/src/infrastructure/transformers/bit-to-boolean.transformer';
+
+import {
+  Entity,
+  Column,
+  PrimaryColumn 
+} from 'typeorm';
 
 @Entity('rol')
 export class RoleOrmEntity {
-  @PrimaryGeneratedColumn({ name: 'id_rol' })
+@PrimaryColumn({ name: 'id_rol', type: 'int' })
   id_rol: number;
 
-  @Column({ name: 'nombre', type: 'varchar', length: 45, unique: true })
+  @Column({ name: 'nombre', type: 'varchar', length: 45 })
   nombre: string;
+
 
   @Column({ name: 'descripcion', type: 'varchar', length: 45, nullable: true })
   descripcion: string;

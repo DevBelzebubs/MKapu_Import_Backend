@@ -1,0 +1,47 @@
+/* ============================================
+   DOMAIN LAYER - CATEGORY
+   logistics/src/core/catalog/category/domain/entity/category-domain-entity.ts
+   ============================================ */
+
+export interface CategoryProps {
+  id_categoria?: number;
+  nombre: string;
+  descripcion?: string;
+  activo?: boolean;
+}
+
+export class Category {
+  private constructor(private readonly props: CategoryProps) {}
+
+  static create(props: CategoryProps): Category {
+    return new Category({
+      ...props,
+      activo: props.activo ?? true,
+    });
+  }
+
+  get id_categoria() {
+    return this.props.id_categoria;
+  }
+
+  get nombre() {
+    return this.props.nombre;
+  }
+
+  get descripcion() {
+    return this.props.descripcion;
+  }
+
+  get activo() {
+    return this.props.activo;
+  }
+
+  // Métodos de negocio
+  isActive(): boolean {
+    return this.props.activo === true;
+  }
+
+  hasDescription(): boolean {
+    return !!this.props.descripcion && this.props.descripcion.trim().length > 0;
+  }
+}
