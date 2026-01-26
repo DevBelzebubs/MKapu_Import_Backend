@@ -7,7 +7,7 @@ import { LogisticsService } from './logistics.service';
 
 //módulos
 import { CategoryModule } from './core/catalog/category/category.module';
-import { SupplierModule } from './core/procurement/supplier/supplier.modul';
+import { SupplierModule } from './core/procurement/supplier/supplier.module';
 import { StoreModule } from './core/warehouse/store/store.module';
 
 import { StoreOrmEntity } from './core/warehouse/store/infrastructure/entity/store-orm.entity';
