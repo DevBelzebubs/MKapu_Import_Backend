@@ -1,12 +1,12 @@
-export class RegisterIncomeItemDto {
+export class RegisterMovementItemDto {
   productId: number;
   warehouseId: number;
   quantity: number;
 }
-export class RegisterIncomeDto {
+
+export class RegisterMovementDto {
   refId: number;
   refTable: string;
   observation?: string;
-  headquartersId: string;
-  items: RegisterIncomeItemDto[];
+  items: RegisterMovementItemDto[];
 }
