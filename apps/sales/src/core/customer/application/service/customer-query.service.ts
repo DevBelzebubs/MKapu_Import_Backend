@@ -5,11 +5,12 @@
 
 import { Injectable, Inject } from '@nestjs/common';
 import { ICustomerQueryPort } from '../../domain/ports/in/cunstomer-port-in';
-import { ICustomerRepositoryPort } from '../../domain/ports/out/customer-port-out';
+import { ICustomerRepositoryPort, IDocumentTypeRepositoryPort } from '../../domain/ports/out/customer-port-out';
 import { ListCustomerFilterDto } from '../dto/in';
 import {
   CustomerResponseDto,
   CustomerListResponse,
+  DocumentTypeResponseDto,
 } from '../dto/out';
 import { CustomerMapper } from '../mapper/customer.mapper';
 
@@ -18,38 +19,48 @@ export class CustomerQueryService implements ICustomerQueryPort {
   constructor(
     @Inject('ICustomerRepositoryPort')
     private readonly customerRepository: ICustomerRepositoryPort,
+    @Inject('IDocumentTypeRepositoryPort')
+    private readonly documentTypeRepository: IDocumentTypeRepositoryPort,
   ) {}
 
   async listCustomers(filters?: ListCustomerFilterDto): Promise<CustomerListResponse> {
-    // Construir filtros para el repositorio
+    // Build filters for repository
     const repoFilters = filters
       ? {
-          estado: filters.estado,
+          estado: filters.status,
           search: filters.search,
-          tipo_doc: filters.tipo_doc,
+          id_tipo_documento: filters.documentTypeId,
         }
       : undefined;
 
-    // Obtener lista de clientes
+    // Get customer list
     const customers = await this.customerRepository.findAll(repoFilters);
 
-    // Retornar respuesta formateada
+    // Return formatted response
     return CustomerMapper.toListResponse(customers);
   }
 
   async getCustomerById(id: string): Promise<CustomerResponseDto | null> {
-    // Buscar cliente por ID
+    // Find customer by ID
     const customer = await this.customerRepository.findById(id);
 
-    // Retornar null si no existe, o el DTO si existe
+    // Return null if doesn't exist, or DTO if exists
     return customer ? CustomerMapper.toResponseDto(customer) : null;
   }
 
-  async getCustomerByDocument(num_doc: string): Promise<CustomerResponseDto | null> {
-    // Buscar cliente por documento
-    const customer = await this.customerRepository.findByDocument(num_doc);
+  async getCustomerByDocument(documentValue: string): Promise<CustomerResponseDto | null> {
+    // Find customer by document
+    const customer = await this.customerRepository.findByDocument(documentValue);
 
-    // Retornar null si no existe, o el DTO si existe
+    // Return null if doesn't exist, or DTO if exists
     return customer ? CustomerMapper.toResponseDto(customer) : null;
+  }
+
+  async getDocumentTypes(): Promise<DocumentTypeResponseDto[]> {
+    // Get all document types
+    const types = await this.documentTypeRepository.findAll();
+
+    // Map to response DTOs
+    return types.map((type) => CustomerMapper.documentTypeToResponseDto(type));
   }
 }

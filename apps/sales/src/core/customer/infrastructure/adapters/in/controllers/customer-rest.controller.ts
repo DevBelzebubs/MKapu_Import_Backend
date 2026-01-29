@@ -27,6 +27,7 @@ import {
   CustomerResponseDto,
   CustomerListResponse,
   CustomerDeletedResponseDto,
+  DocumentTypeResponseDto, 
 } from '../../../../application/dto/out';
 
 @Controller('customers')
@@ -37,6 +38,20 @@ export class CustomerRestController {
     @Inject('ICustomerCommandPort')
     private readonly customerCommandService: ICustomerCommandPort,
   ) {}
+
+  // ===============================
+  // DOCUMENT TYPES
+  // ===============================
+
+  @Get('document-types')
+  @HttpCode(HttpStatus.OK)
+  async getDocumentTypes(): Promise<DocumentTypeResponseDto[]> {
+    return this.customerQueryService.getDocumentTypes();
+  }
+
+  // ===============================
+  // COMMANDS
+  // ===============================
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -50,11 +65,11 @@ export class CustomerRestController {
   @HttpCode(HttpStatus.OK)
   async updateCustomer(
     @Param('id') id: string,
-    @Body() updateDto: Omit<UpdateCustomerDto, 'id_cliente'>,
+    @Body() updateDto: Omit<UpdateCustomerDto, 'customerId'>,  // ✅ customerId en inglés
   ): Promise<CustomerResponseDto> {
     const fullUpdateDto: UpdateCustomerDto = {
       ...updateDto,
-      id_cliente: id,
+      customerId: id,  // ✅ customerId en inglés
     };
     return this.customerCommandService.updateCustomer(fullUpdateDto);
   }
@@ -63,11 +78,11 @@ export class CustomerRestController {
   @HttpCode(HttpStatus.OK)
   async changeCustomerStatus(
     @Param('id') id: string,
-    @Body() statusDto: { estado: boolean },
+    @Body() statusDto: { status: boolean },  // ✅ status en inglés
   ): Promise<CustomerResponseDto> {
     const changeStatusDto: ChangeCustomerStatusDto = {
-      id_cliente: id,
-      estado: statusDto.estado,
+      customerId: id,  // ✅ customerId en inglés
+      status: statusDto.status,  // ✅ status en inglés
     };
     return this.customerCommandService.changeCustomerStatus(changeStatusDto);
   }
@@ -80,17 +95,9 @@ export class CustomerRestController {
     return this.customerCommandService.deleteCustomer(id);
   }
 
-  @Get(':id')
-  async getCustomer(@Param('id') id: string): Promise<CustomerResponseDto | null> {
-    return this.customerQueryService.getCustomerById(id);
-  }
-
-  @Get('document/:num_doc')
-  async getCustomerByDocument(
-    @Param('num_doc') num_doc: string,
-  ): Promise<CustomerResponseDto | null> {
-    return this.customerQueryService.getCustomerByDocument(num_doc);
-  }
+  // ===============================
+  // QUERIES
+  // ===============================
 
   @Get()
   async listCustomers(
@@ -98,4 +105,28 @@ export class CustomerRestController {
   ): Promise<CustomerListResponse> {
     return this.customerQueryService.listCustomers(filters);
   }
+
+  @Get(':id')
+  async getCustomer(@Param('id') id: string): Promise<CustomerResponseDto | null> {
+    return this.customerQueryService.getCustomerById(id);
+  }
+
+  @Get('document/:documentValue')  // ✅ documentValue en inglés
+  async getCustomerByDocument(
+    @Param('documentValue') documentValue: string,  // ✅ documentValue en inglés
+  ): Promise<CustomerResponseDto | null> {
+    return this.customerQueryService.getCustomerByDocument(documentValue);
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+

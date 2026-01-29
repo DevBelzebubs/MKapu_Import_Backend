@@ -3,9 +3,9 @@
    sales/src/core/customer/application/service/customer-command.service.ts
    ============================================ */
 
-import { Injectable, Inject, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ICustomerCommandPort } from '../../domain/ports/in/cunstomer-port-in';
-import { ICustomerRepositoryPort } from '../../domain/ports/out/customer-port-out';
+import { ICustomerRepositoryPort, IDocumentTypeRepositoryPort } from '../../domain/ports/out/customer-port-out';
 import {
   RegisterCustomerDto,
   UpdateCustomerDto,
@@ -22,79 +22,89 @@ export class CustomerCommandService implements ICustomerCommandPort {
   constructor(
     @Inject('ICustomerRepositoryPort')
     private readonly customerRepository: ICustomerRepositoryPort,
+    @Inject('IDocumentTypeRepositoryPort')
+    private readonly documentTypeRepository: IDocumentTypeRepositoryPort,
   ) {}
 
   async registerCustomer(dto: RegisterCustomerDto): Promise<CustomerResponseDto> {
-    // Validar que el documento no exista
-    const exists = await this.customerRepository.existsByDocument(dto.num_doc);
-    if (exists) {
-      throw new ConflictException(
-        `Ya existe un cliente con el documento ${dto.num_doc}`,
+    // Validate document type exists
+    const documentType = await this.documentTypeRepository.findById(dto.documentTypeId);
+    if (!documentType) {
+      throw new BadRequestException(
+        `Document type with ID ${dto.documentTypeId} does not exist`,
       );
     }
 
-    // Crear entidad de dominio desde DTO
+    // Validate document doesn't exist
+    const exists = await this.customerRepository.existsByDocument(dto.documentValue);
+    if (exists) {
+      throw new ConflictException(
+        `A customer with document ${dto.documentValue} already exists`,
+      );
+    }
+
+    // Create domain entity from DTO
     const customer = CustomerMapper.fromRegisterDto(dto);
 
-    // Guardar en repositorio
+    // Save to repository
     const savedCustomer = await this.customerRepository.save(customer);
 
-    // Retornar DTO de respuesta
+    // Return response DTO
     return CustomerMapper.toResponseDto(savedCustomer);
   }
 
   async updateCustomer(dto: UpdateCustomerDto): Promise<CustomerResponseDto> {
-    // Buscar cliente existente
-    const existingCustomer = await this.customerRepository.findById(dto.id_cliente);
+    // Find existing customer
+    const existingCustomer = await this.customerRepository.findById(dto.customerId);
     if (!existingCustomer) {
       throw new NotFoundException(
-        `Cliente con ID ${dto.id_cliente} no encontrado`,
+        `Customer with ID ${dto.customerId} not found`,
       );
     }
 
-    // Actualizar entidad de dominio
+    // Update domain entity
     const updatedCustomer = CustomerMapper.fromUpdateDto(existingCustomer, dto);
 
-    // Guardar cambios
+    // Save changes
     const savedCustomer = await this.customerRepository.update(updatedCustomer);
 
-    // Retornar DTO de respuesta
+    // Return response DTO
     return CustomerMapper.toResponseDto(savedCustomer);
   }
 
   async changeCustomerStatus(dto: ChangeCustomerStatusDto): Promise<CustomerResponseDto> {
-    // Buscar cliente existente
-    const existingCustomer = await this.customerRepository.findById(dto.id_cliente);
+    // Find existing customer
+    const existingCustomer = await this.customerRepository.findById(dto.customerId);
     if (!existingCustomer) {
       throw new NotFoundException(
-        `Cliente con ID ${dto.id_cliente} no encontrado`,
+        `Customer with ID ${dto.customerId} not found`,
       );
     }
 
-    // Cambiar estado
+    // Change status
     const customerWithNewStatus = CustomerMapper.withStatus(
       existingCustomer,
-      dto.estado,
+      dto.status,
     );
 
-    // Guardar cambios
+    // Save changes
     const savedCustomer = await this.customerRepository.update(customerWithNewStatus);
 
-    // Retornar DTO de respuesta
+    // Return response DTO
     return CustomerMapper.toResponseDto(savedCustomer);
   }
 
   async deleteCustomer(id: string): Promise<CustomerDeletedResponseDto> {
-    // Verificar que el cliente existe
+    // Verify customer exists
     const existingCustomer = await this.customerRepository.findById(id);
     if (!existingCustomer) {
-      throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
+      throw new NotFoundException(`Customer with ID ${id} not found`);
     }
 
-    // Eliminar del repositorio
+    // Delete from repository
     await this.customerRepository.delete(id);
 
-    // Retornar confirmación
+    // Return confirmation
     return CustomerMapper.toDeletedResponse(id);
   }
 }

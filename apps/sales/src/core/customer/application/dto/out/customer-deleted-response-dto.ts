@@ -1,7 +1,9 @@
+/* ============================================
+   sales/src/core/customer/application/dto/out/customer-deleted-response-dto.ts
+   ============================================ */
 
-// sales/src/core/customer/application/dto/out/customer-deleted-response-dto.ts
 export interface CustomerDeletedResponseDto {
-  id_cliente: string;
+  customerId: string;
   message: string;
   deletedAt: Date;
 }

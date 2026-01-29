@@ -1,114 +1,89 @@
-/* sales/src/core/customer/domain/entity/customer-domain-entity.ts */
 
+/* ============================================
+   sales/src/core/customer/domain/entity/customer-domain-entity.ts
+   ============================================ */
 
 export interface CustomerProps {
-  id_cliente?: string;
-  tipo_doc?: 'DNI' | 'RUC' | 'PASAPORTE' | 'CE';
-  num_doc?: string;
-  razon_social?: string;
-  nombres?: string;
-  direccion?: string;
-  email?: string;
-  telefono?: string;
-  estado?: boolean;
+  id_cliente?: string;              // DB field - Spanish
+  id_tipo_documento: number;        // DB field - Spanish
+  valor_doc: string;                // DB field - Spanish
+  nombres: string;                  // DB field - Spanish
+  direccion?: string;               // DB field - Spanish
+  email?: string;                   // DB field - Spanish
+  telefono?: string;                // DB field - Spanish
+  estado?: boolean;                 // DB field - Spanish
+  // Enriched data from relations
+  tipoDocumentoDescripcion?: string;
+  tipoDocumentoCodSunat?: string;
 }
 
 export class Customer {
-  private constructor(private readonly props: CustomerProps) {}
-
-  static create(props: CustomerProps): Customer {
-    return new Customer({
-      ...props,
-      estado: props.estado ?? true,
-    });
+  private constructor(private readonly props: CustomerProps) {
+    this.validate();
   }
 
-  // Getters
-  get id_cliente() {
+  static create(props: CustomerProps): Customer {
+    return new Customer(props);
+  }
+
+  private validate(): void {
+    if (!this.props.valor_doc || this.props.valor_doc.trim().length === 0) {
+      throw new Error('Document value is required');
+    }
+    if (!this.props.nombres || this.props.nombres.trim().length === 0) {
+      throw new Error('Name is required');
+    }
+    if (!this.props.id_tipo_documento) {
+      throw new Error('Document type is required');
+    }
+  }
+
+  get id_cliente(): string | undefined {
     return this.props.id_cliente;
   }
 
-  get tipo_doc() {
-    return this.props.tipo_doc;
+  get id_tipo_documento(): number {
+    return this.props.id_tipo_documento;
   }
 
-  get num_doc() {
-    return this.props.num_doc;
+  get valor_doc(): string {
+    return this.props.valor_doc;
   }
 
-  get razon_social() {
-    return this.props.razon_social;
-  }
-
-  get nombres() {
+  get nombres(): string {
     return this.props.nombres;
   }
 
-  get direccion() {
+  get direccion(): string | undefined {
     return this.props.direccion;
   }
 
-  get email() {
+  get email(): string | undefined {
     return this.props.email;
   }
 
-  get telefono() {
+  get telefono(): string | undefined {
     return this.props.telefono;
   }
 
-  get estado() {
-    return this.props.estado;
+  get estado(): boolean {
+    return this.props.estado ?? true;
   }
 
-  // Métodos de negocio
-  isActive(): boolean {
-    return this.props.estado === true;
+  get tipoDocumentoDescripcion(): string | undefined {
+    return this.props.tipoDocumentoDescripcion;
   }
 
-  isCompany(): boolean {
-    return this.props.tipo_doc === 'RUC';
-  }
-
-  isPerson(): boolean {
-    return this.props.tipo_doc === 'DNI' || 
-           this.props.tipo_doc === 'PASAPORTE' || 
-           this.props.tipo_doc === 'CE';
+  get tipoDocumentoCodSunat(): string | undefined {
+    return this.props.tipoDocumentoCodSunat;
   }
 
   getDisplayName(): string {
-    if (this.isCompany()) {
-      return this.props.razon_social || 'Sin razón social';
-    }
-    return this.props.nombres || 'Sin nombre';
-  }
-
-  hasCompleteInfo(): boolean {
-    return !!(
-      this.props.num_doc &&
-      (this.isCompany() ? this.props.razon_social : this.props.nombres) &&
-      this.props.direccion &&
-      this.props.telefono
-    );
-  }
-
-  isValidDocument(): boolean {
-    if (!this.props.num_doc || !this.props.tipo_doc) return false;
-
-    switch (this.props.tipo_doc) {
-      case 'DNI':
-        return this.props.num_doc.length === 8 && /^\d+$/.test(this.props.num_doc);
-      case 'RUC':
-        return this.props.num_doc.length === 11 && /^\d+$/.test(this.props.num_doc);
-      case 'PASAPORTE':
-        return this.props.num_doc.length >= 6 && this.props.num_doc.length <= 12;
-      case 'CE':
-        return this.props.num_doc.length === 9 && /^\d+$/.test(this.props.num_doc);
-      default:
-        return false;
-    }
+    return this.props.nombres;
   }
 
   getInvoiceType(): 'BOLETA' | 'FACTURA' {
-    return this.isCompany() ? 'FACTURA' : 'BOLETA';
+    // SUNAT code '6' = RUC
+    return this.props.tipoDocumentoCodSunat === '6' ? 'FACTURA' : 'BOLETA';
   }
 }

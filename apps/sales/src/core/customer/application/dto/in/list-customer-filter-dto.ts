@@ -1,7 +1,9 @@
+/* ============================================
+   sales/src/core/customer/application/dto/in/list-customer-filter-dto.ts
+   ============================================ */
 
-// sales/src/core/customer/application/dto/in/list-customer-filter-dto.ts
 export interface ListCustomerFilterDto {
-  estado?: boolean;
+  status?: boolean;
   search?: string;
-  tipo_doc?: 'DNI' | 'RUC' | 'PASAPORTE' | 'CE';
+  documentTypeId?: number;
 }

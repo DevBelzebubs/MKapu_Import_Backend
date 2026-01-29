@@ -1,7 +1,5 @@
 
-
 /* ============================================
-   DEBUG: Add logging to CustomerRepository save method
    sales/src/core/customer/infrastructure/adapters/out/repository/customer.repository.ts
    ============================================ */
 
@@ -21,26 +19,27 @@ export class CustomerRepository implements ICustomerRepositoryPort {
   ) {}
 
   async save(customer: Customer): Promise<Customer> {
-    console.log('🔍 Domain Customer antes de mapear:', customer);
-    
     const customerOrm = CustomerMapper.toOrmEntity(customer);
-    console.log('🔍 CustomerORM después de mapear:', customerOrm);
-    
     const saved = await this.customerOrmRepository.save(customerOrm);
-    console.log('🔍 CustomerORM guardado en DB:', saved);
     
-    const domainEntity = CustomerMapper.toDomainEntity(saved);
-    console.log('🔍 Domain Customer después de guardar:', domainEntity);
+    // Cargar la relación con tipo_documento
+    const savedWithRelation = await this.customerOrmRepository.findOne({
+      where: { id_cliente: saved.id_cliente },
+      relations: ['tipoDocumento'],
+    });
     
-    return domainEntity;
+    return CustomerMapper.toDomainEntity(savedWithRelation!);
   }
 
   async update(customer: Customer): Promise<Customer> {
     const customerOrm = CustomerMapper.toOrmEntity(customer);
     await this.customerOrmRepository.update(customer.id_cliente!, customerOrm);
+    
     const updated = await this.customerOrmRepository.findOne({
       where: { id_cliente: customer.id_cliente },
+      relations: ['tipoDocumento'],
     });
+    
     return CustomerMapper.toDomainEntity(updated!);
   }
 
@@ -51,13 +50,15 @@ export class CustomerRepository implements ICustomerRepositoryPort {
   async findById(id: string): Promise<Customer | null> {
     const customerOrm = await this.customerOrmRepository.findOne({
       where: { id_cliente: id },
+      relations: ['tipoDocumento'],
     });
     return customerOrm ? CustomerMapper.toDomainEntity(customerOrm) : null;
   }
 
-  async findByDocument(num_doc: string): Promise<Customer | null> {
+  async findByDocument(valor_doc: string): Promise<Customer | null> {
     const customerOrm = await this.customerOrmRepository.findOne({
-      where: { num_doc },
+      where: { valor_doc },
+      relations: ['tipoDocumento'],
     });
     return customerOrm ? CustomerMapper.toDomainEntity(customerOrm) : null;
   }
@@ -65,9 +66,11 @@ export class CustomerRepository implements ICustomerRepositoryPort {
   async findAll(filters?: {
     estado?: boolean;
     search?: string;
-    tipo_doc?: string;
+    id_tipo_documento?: number;
   }): Promise<Customer[]> {
-    const queryBuilder = this.customerOrmRepository.createQueryBuilder('cliente');
+    const queryBuilder = this.customerOrmRepository
+      .createQueryBuilder('cliente')
+      .leftJoinAndSelect('cliente.tipoDocumento', 'tipoDocumento');
 
     if (filters?.estado !== undefined) {
       queryBuilder.andWhere('cliente.estado = :estado', {
@@ -75,15 +78,15 @@ export class CustomerRepository implements ICustomerRepositoryPort {
       });
     }
 
-    if (filters?.tipo_doc) {
-      queryBuilder.andWhere('cliente.tipo_doc = :tipo_doc', {
-        tipo_doc: filters.tipo_doc,
+    if (filters?.id_tipo_documento) {
+      queryBuilder.andWhere('cliente.id_tipo_documento = :id_tipo_documento', {
+        id_tipo_documento: filters.id_tipo_documento,
       });
     }
 
     if (filters?.search) {
       queryBuilder.andWhere(
-        '(cliente.num_doc LIKE :search OR cliente.razon_social LIKE :search OR cliente.nombres LIKE :search OR cliente.email LIKE :search)',
+        '(cliente.valor_doc LIKE :search OR cliente.nombres LIKE :search OR cliente.email LIKE :search)',
         { search: `%${filters.search}%` },
       );
     }
@@ -92,8 +95,10 @@ export class CustomerRepository implements ICustomerRepositoryPort {
     return customersOrm.map((custOrm) => CustomerMapper.toDomainEntity(custOrm));
   }
 
-  async existsByDocument(num_doc: string): Promise<boolean> {
-    const count = await this.customerOrmRepository.count({ where: { num_doc } });
+  async existsByDocument(valor_doc: string): Promise<boolean> {
+    const count = await this.customerOrmRepository.count({ 
+      where: { valor_doc } 
+    });
     return count > 0;
   }
 }

@@ -1,15 +1,19 @@
 
-// sales/src/core/customer/application/dto/out/customer-response-dto.ts
+/* ============================================
+   sales/src/core/customer/application/dto/out/customer-response-dto.ts
+   ============================================ */
+
 export interface CustomerResponseDto {
-  id_cliente: string;
-  tipo_doc: 'DNI' | 'RUC' | 'PASAPORTE' | 'CE';
-  num_doc: string;
-  razon_social?: string;
-  nombres?: string;
-  direccion?: string;
+  customerId: string;
+  documentTypeId: number;
+  documentTypeDescription: string;
+  documentTypeSunatCode: string;
+  documentValue: string;
+  name: string;
+  address?: string;
   email?: string;
-  telefono?: string;
-  estado: boolean;
+  phone?: string;
+  status: boolean;
   displayName: string;
   invoiceType: 'BOLETA' | 'FACTURA';
 }
