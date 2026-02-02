@@ -16,7 +16,6 @@ export class CheckoutService {
       orderData.token,
       orderData.email,
     );
-
     if (paymentResult.status !== 'success') {
       throw new Error('Pago fallido');
     }
