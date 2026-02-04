@@ -9,6 +9,8 @@ import { HttpModule } from '@nestjs/axios';
 import { CustomerModule } from './core/customer/customer.module';
 import { PromotionModule } from './core/promotion/promotion.module';
 import { SalesReceiptModule } from './core/sales-receipt/sales-receipt.module';
+import { CashboxModule } from './core/cashbox/cashbox.module';
+import { QuoteModule } from './core/quote/quote.module';
 
 import { CustomerOrmEntity } from './core/customer/infrastructure/entity/customer-orm.entity';
 import { DocumentTypeOrmEntity } from './core/customer/infrastructure/entity/document-type-orm.entity';
@@ -19,7 +21,7 @@ import { SalesTypeOrmEntity } from './core/sales-receipt/infrastructure/entity/s
 import { ReceiptTypeOrmEntity } from './core/sales-receipt/infrastructure/entity/receipt-type-orm.entity'; // ✅ Para FK de tipo_comprobante
 import { SunatCurrencyOrmEntity } from './core/sales-receipt/infrastructure/entity/sunat-currency-orm.entity'; // ✅ Para 'PEN'
 import { CashboxOrmEntity } from './core/cashbox/infrastructure/entity/cashbox-orm.entity';
-import { CashboxModule } from './core/cashbox/cashbox.module';
+import { QuoteOrmEntity } from './core/quote/infrastructure/entity/quote-orm.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
@@ -57,6 +59,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           ReceiptTypeOrmEntity,
           SunatCurrencyOrmEntity,
           CashboxOrmEntity,
+          QuoteOrmEntity,
         ],
         synchronize: false,
         autoLoadEntities: true,
@@ -73,6 +76,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     PromotionModule,
     SalesReceiptModule,
     CashboxModule,
+    QuoteModule,
   ],
   controllers: [SalesController],
   providers: [SalesService],
