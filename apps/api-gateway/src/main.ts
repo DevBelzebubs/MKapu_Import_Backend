@@ -12,7 +12,7 @@ async function bootstrap() {
     origin: 'http://localhost:4200',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-    allowedHeaders: 'Content-Type, Accept, Authorization',
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'x-role'],
   });
 
   // --- DEFINICIÓN DE PUERTOS (CORREGIDO) ---
@@ -113,7 +113,9 @@ async function bootstrap() {
       url.startsWith('/logistics') || url.startsWith('/products');
 
     if (isAdminSocket) {
-      console.log(`⚡ Handshake detectado para ADMINISTRATIONN (Namespace: ${url})`);
+      console.log(
+        `⚡ Handshake detectado para ADMINISTRATIONN (Namespace: ${url})`,
+      );
       // console.log(`⚡ Handshake detectado para ADMINISTRATION`);
       adminProxy.upgrade(req, socket, head);
     } else if (isLogisticsSocket) {
