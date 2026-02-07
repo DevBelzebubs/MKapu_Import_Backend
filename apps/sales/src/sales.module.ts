@@ -37,6 +37,7 @@ import { PaymentTypeOrmEntity } from './core/sales-receipt/infrastructure/entity
 import { PaymentOrmEntity } from './core/sales-receipt/infrastructure/entity/payment-orm.entity';
 import { AccountingModule } from './core/accounting/accounting.module';
 import { CpeDocumentOrmEntity } from './core/accounting/infrastructure/entity/cpe-document-orm.entity';
+import { ReportsModule } from './core/reports/reports.module';
 
 @Module({
   imports: [
@@ -105,6 +106,7 @@ import { CpeDocumentOrmEntity } from './core/accounting/infrastructure/entity/cp
     CashboxModule,
     QuoteModule,
     AccountingModule,
+    ReportsModule,
   ],
   controllers: [SalesController, WarrantyRestController],
   providers: [
