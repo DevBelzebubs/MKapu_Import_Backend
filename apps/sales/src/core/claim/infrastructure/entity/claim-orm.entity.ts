@@ -5,7 +5,7 @@ import { SalesReceiptOrmEntity } from "../../../sales-receipt/infrastructure/ent
 export class ClaimOrmEntity {
 
     @PrimaryGeneratedColumn()
-    id_reclamo: number;
+    id_reclamo: number; 
 
     @Column()
     id_vendedor_ref: string;
