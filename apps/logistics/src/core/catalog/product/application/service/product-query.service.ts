@@ -85,7 +85,6 @@ export class ProductQueryService implements IProductQueryPort {
     return { data };
   }
 
-  // ✅ Detalle producto + stock por sede (por ID)
   async getProductDetailWithStock(id_producto: number, id_sede: number): Promise<ProductDetailWithStockResponseDto> {
     const { product, stock } = await this.repository.getProductDetailWithStock(id_producto, id_sede);
 
@@ -112,7 +111,6 @@ export class ProductQueryService implements IProductQueryPort {
     });
   }
 
-  // ✅ NUEVO: Detalle producto + stock por sede (por CÓDIGO)
   async getProductDetailWithStockByCode(codigo: string, id_sede: number): Promise<ProductDetailWithStockResponseDto> {
     const product = await this.repository.findByCode(codigo);
 

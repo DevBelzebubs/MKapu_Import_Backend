@@ -59,7 +59,7 @@ export class UserRepository implements IUserRepositoryPort {
       .leftJoin('cuenta_usuario', 'cu', 'cu.id_usuario = usuario.id_usuario')
       .leftJoin('cuenta_rol', 'cr', 'cr.id_cuenta = cu.id_cuenta')
       .leftJoin('rol', 'r', 'r.id_rol = cr.id_rol')
-      .addSelect('r.nombre', 'roleName') // alias more explicit as roleName
+      .addSelect('r.nombre', 'roleName') 
       .where('usuario.id_usuario = :id', { id });
 
     const { entities, raw } = await queryBuilder.getRawAndEntities();

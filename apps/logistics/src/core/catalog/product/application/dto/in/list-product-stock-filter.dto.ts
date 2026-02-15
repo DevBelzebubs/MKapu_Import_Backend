@@ -18,7 +18,6 @@ export class ListProductStockFilterDto {
   @IsInt()
   id_categoria?: number;
 
-  // ✅ NUEVO: filtra por nombre de la categoría (categoria.nombre)
   @IsOptional()
   @IsString()
   categoria?: string;

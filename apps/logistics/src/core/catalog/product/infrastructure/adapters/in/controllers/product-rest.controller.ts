@@ -122,7 +122,6 @@ export class ProductRestController {
     return this.queryService.autocompleteProducts(dto);
   }
 
-  // ✅ Detalle producto + stock por sede (por ID)
   @Get(':id_producto/stock')
   async detailWithStock(
     @Param('id_producto', ParseIntPipe) id_producto: number,
@@ -136,8 +135,6 @@ export class ProductRestController {
     return this.queryService.getProductDetailWithStock(id_producto, Number(sede));
   }
 
-  // ✅ Detalle producto + stock por sede (por CÓDIGO)
-  // IMPORTANTE: esta ruta debe ir ANTES que 'code/:codigo' (más específica primero)
   @Get('code/:codigo/stock')
   async detailWithStockByCode(
     @Param('codigo') codigo: string,
@@ -160,7 +157,6 @@ export class ProductRestController {
 
   @Get('code/:codigo')
   async getByCode(@Param('codigo') codigo: string) {
-    // ✅ Mejor: que no devuelva null con 200, sino 404
     const product = await this.queryService.getProductByCode(codigo);
     if (!product) throw new NotFoundException(`Producto no encontrado: ${codigo}`);
     return product;

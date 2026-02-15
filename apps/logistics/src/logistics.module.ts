@@ -14,6 +14,7 @@ import { TransferModule } from './core/warehouse/transfer/transfer.module';
 import { SupplierModule } from './core/procurement/supplier/supplier.module';
 import { WastageModule } from './core/catalog/wastage/wastage.module';
 import { InventoryModule } from './core/warehouse/inventory/inventory.module';
+import { AuctionModule} from './core/catalog/auction/auction.module';
 
 
 //entities ORM
@@ -28,6 +29,8 @@ import { WastageDetailOrmEntity } from './core/catalog/wastage/infrastructure/en
 import { WastageOrmEntity } from './core/catalog/wastage/infrastructure/entity/wastage-orm.entity';
 import { StockOrmEntity } from './core/warehouse/inventory/infrastructure/entity/stock-orm-intity';
 import { WastageTypeOrmEntity } from './core/catalog/wastage/infrastructure/entity/wastage-type.orm.entity';
+import { AuctionDetailOrmEntity } from './core/catalog/auction/infrastructure/entity/auction-detail.orm.entity';
+import { AuctionOrmEntity } from './core/catalog/auction/infrastructure/entity/auction-orm.entity';
 
 
 @Module({
@@ -58,7 +61,9 @@ import { WastageTypeOrmEntity } from './core/catalog/wastage/infrastructure/enti
           WastageOrmEntity,
           WastageDetailOrmEntity,
           StockOrmEntity,
-          WastageTypeOrmEntity
+          WastageTypeOrmEntity,
+          AuctionOrmEntity,
+          AuctionDetailOrmEntity,
         ],
         autoLoadEntities: true,
         synchronize: false,
@@ -75,6 +80,8 @@ import { WastageTypeOrmEntity } from './core/catalog/wastage/infrastructure/enti
     SupplierModule,
     WastageModule,
     InventoryModule,
+    AuctionModule,
+
   ],
   controllers: [LogisticsController],
   providers: [LogisticsService],

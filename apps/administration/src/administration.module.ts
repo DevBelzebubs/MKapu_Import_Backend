@@ -19,14 +19,13 @@ import { PermissionModule } from './core/permission/permission.module';
 import { RoleModule } from './core/role/role.module';
 import { HeadquartersModule } from './core/headquarters/headquarters.module';
 
-// ⭐ NUEVO: Importar el controlador TCP
 import { UsersTcpController } from './core/user/infrastructure/adapters/in/TCP/users-tcp.controller';
 @Module({
   imports: [
     // Configuración de variables de entorno
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env', // Lee el .env de la raíz
+      envFilePath: '.env', 
     }),
 
     // Configuración dinámica de TypeORM
