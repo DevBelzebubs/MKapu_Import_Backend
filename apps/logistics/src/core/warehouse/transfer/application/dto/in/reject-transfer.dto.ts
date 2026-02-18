@@ -10,11 +10,10 @@ export class RejectTransferDto {
   @IsNotEmpty()
   reason: string;
 
-
-  @Column({ 
-    name: 'fec_transf', 
-    type: 'datetime', 
-    default: () => 'CURRENT_TIMESTAMP' // Para que no falle si el DTO no envía fecha
+  @Column({
+    name: 'fec_transf',
+    type: 'datetime',
+    default: () => 'CURRENT_TIMESTAMP', // Para que no falle si el DTO no envía fecha
   })
   date: Date;
 }
