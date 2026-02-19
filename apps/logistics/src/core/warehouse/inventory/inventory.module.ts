@@ -14,15 +14,15 @@ import { InventoryMovementRestController } from './infrastructure/adapters/in/co
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      InventoryMovementOrmEntity,      
-      InventoryMovementDetailOrmEntity, 
-      StockOrmEntity                    
+      InventoryMovementOrmEntity,
+      InventoryMovementDetailOrmEntity,
+      StockOrmEntity,
     ]),
   ],
   controllers: [InventoryMovementRestController],
   providers: [
     {
-      provide: 'IInventoryMovementCommandPort', 
+      provide: 'IInventoryMovementCommandPort',
       useClass: InventoryCommandService,
     },
     InventoryCommandService,

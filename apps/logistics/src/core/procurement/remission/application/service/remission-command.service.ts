@@ -65,7 +65,7 @@ export class RemissionCommandService implements RemissionPortIn {
       guia.modalidad = dto.modalidad;
       guia.tipo_guia = dto.tipo_guia;
       guia.peso_total = dto.peso_bruto_total;
-      guia.unidad_peso = 'KGM';
+      guia.unidad_peso = dto.unidad_peso;
       guia.cantidad = dto.items.reduce((acc, i) => acc + i.cantidad, 0);
       guia.estado = RemissionStatus.EMITIDO;
 

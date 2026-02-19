@@ -57,10 +57,12 @@ export class CreateRemissionDto {
   @IsString()
   motivo_traslado: string;
 
+  @IsString()
+  unidad_peso: string;
+
   @IsNumber()
   peso_bruto_total: number;
 
-  // Objetos anidados
   @ValidateNested()
   @Type(() => TransferDataDto)
   datos_traslado: TransferDataDto;
