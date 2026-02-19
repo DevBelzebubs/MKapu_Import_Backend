@@ -15,7 +15,7 @@ export class UpdateWarehouseDto {
   @IsOptional()
   @IsString()
   @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
-  provincia?: string;      // ← faltaba
+  provincia?: string;    
 
   @IsOptional()
   @IsString()
