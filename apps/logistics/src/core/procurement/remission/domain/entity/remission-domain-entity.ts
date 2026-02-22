@@ -109,7 +109,7 @@ export class Remission {
       new RemissionCreatedEvent({
         remissionId: remission.id_guia,
         warehouseId: remission.props.id_almacen_origen,
-        items: remission._detalles,
+        items: remission._detalles.map(d => ({ ...d, sedeId: remission.props.id_sede_ref })),
         refId: remission.props.id_comprobante_ref,
         serie_numero: remission.getFullNumber(),
       }),

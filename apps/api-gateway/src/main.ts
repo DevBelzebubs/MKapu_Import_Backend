@@ -52,10 +52,8 @@ async function bootstrap() {
   app.use('/sales',     salesProxy);
   app.use('/logistics', logisticsProxy);
 
-  // ── Obtener el httpServer ANTES de listen ──
   const httpServer = app.getHttpServer();
 
-  // ── Registrar upgrade ANTES de listen() ──
   httpServer.on('upgrade', (req: any, socket: any, head: any) => {
     const url: string = req.url ?? '';
     console.log(`[WS Upgrade] ${url}`);

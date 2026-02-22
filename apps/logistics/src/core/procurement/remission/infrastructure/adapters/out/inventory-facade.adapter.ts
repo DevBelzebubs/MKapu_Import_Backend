@@ -21,6 +21,7 @@ export class InventoryFacadeAdapter implements InventoryFacadePort {
       items: params.items.map((item) => ({
         productId: item.id_producto,
         warehouseId: params.warehouseId,
+        sedeId: item.sedeId,
         quantity: item.cantidad,
         type: 'SALIDA',
       })),
