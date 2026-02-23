@@ -95,16 +95,22 @@ export class UserRestController {
     this.userGateway.notifyUserDeleted(id);
     return deletedUser;
   }
+  
+  @Get()
+  async listUsers(@Query() filters: ListUserFilterDto): Promise<UserListResponse> {
+    return this.userQueryService.listUsers(filters);
+  }
+
+  @Get('all')
+  async getAllUsers(): Promise<UserResponseDto[]> {
+    return this.userQueryService.getAllUsers();
+  }
+
   @Get(':id')
   async getUser(@Param('id') id: number) {
     return this.userQueryService.getUserById(id);
   }
-  @Get()
-  async listUsers(
-    @Query() filters: ListUserFilterDto,
-  ): Promise<UserListResponse> {
-    return this.userQueryService.listUsers(filters);
-  }
+
   @Get(':id/full')
   async getUserWithAccount(@Param('id') id: number) {
     return await this.userQueryService.getUserWithAccount(id);
