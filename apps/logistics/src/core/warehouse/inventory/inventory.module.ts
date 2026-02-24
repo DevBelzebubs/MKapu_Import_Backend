@@ -13,6 +13,7 @@ import { InventoryQueryService } from './application/service/inventory-query.ser
 import { ConteoInventarioOrmEntity } from './infrastructure/entity/inventory-count-orm.entity';
 import { ConteoInventarioDetalleOrmEntity } from './infrastructure/entity/inventory-count-detail-orm.entity';
 import { InventoryCountController } from './infrastructure/adapters/in/controllers/inventory-count.controller';
+import { InventoryCountRepository } from './infrastructure/adapters/out/repository/inventory-count.repository';
 
 @Module({
   imports: [
@@ -38,12 +39,17 @@ import { InventoryCountController } from './infrastructure/adapters/in/controlle
       provide: 'IInventoryRepositoryPort',
       useClass: InventoryTypeOrmRepository,
     },
+    {
+      provide: 'IInventoryCountRepository',
+      useClass: InventoryCountRepository,
+    },
   ],
   exports: [
     InventoryCommandService,
     InventoryQueryService,
     InventoryTypeOrmRepository,
     'IInventoryRepositoryPort',
+    'IInventoryCountRepository',
   ],
 })
 export class InventoryModule {}

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Body,
   Controller,
@@ -6,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
 import { InventoryCommandService } from '../../../../application/service/inventory-command.service';
 import {
@@ -13,6 +16,7 @@ import {
   FinalizarConteoDto,
   IniciarConteoDto,
 } from '../../../../application/dto/in/inventory-count-dto-in';
+import { Response } from 'express';
 import { InventoryQueryService } from '../../../../application/service/inventory-query.service';
 import { ListInventoryCountFilterDto } from '../../../../application/dto/in/list-inventory-count-filter.dto';
 
@@ -50,5 +54,39 @@ export class InventoryCountController {
   @Get(':idConteo')
   async obtenerDetalle(@Param('idConteo') idConteo: number) {
     return await this.inventoryQueryService.obtenerConteoConDetalles(idConteo);
+  }
+  @Get(':id/exportar/excel')
+  async exportarExcel(@Param('id') id: number, @Res() res: Response) {
+    try {
+      const buffer = await this.inventoryQueryService.exportarConteoExcel(id);
+      res.set({
+        'Content-Type':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename=Conteo_Inventario_${id}.xlsx`,
+        'Content-Length': buffer.byteLength,
+      });
+
+      // Enviamos el archivo al cliente
+      res.end(buffer);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+  @Get(':id/exportar/pdf')
+  async exportarPdf(@Param('id') id: number, @Res() res: Response) {
+    try {
+      const buffer = await this.inventoryQueryService.exportarConteoPdf(id);
+
+      // Cabeceras para PDF
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename=Conteo_Inventario_${id}.pdf`,
+        'Content-Length': buffer.byteLength,
+      });
+
+      res.end(buffer);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
   }
 }
