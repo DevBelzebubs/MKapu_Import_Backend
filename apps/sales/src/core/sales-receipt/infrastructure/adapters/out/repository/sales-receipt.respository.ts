@@ -26,10 +26,7 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
     return this.dataSource.createQueryRunner();
   }
 
-  async getNextNumberWithLock(
-    serie: string,
-    queryRunner: QueryRunner,
-  ): Promise<number> {
+  async getNextNumberWithLock(serie: string, queryRunner: QueryRunner): Promise<number> {
     const lastReceipt = await queryRunner.manager
       .createQueryBuilder(SalesReceiptOrmEntity, 'receipt')
       .where('receipt.serie = :serie', { serie })
@@ -40,27 +37,21 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
 
   async save(receipt: SalesReceipt): Promise<SalesReceipt> {
     const receiptOrm = SalesReceiptMapper.toOrm(receipt);
-    const savedOrm = await this.receiptOrmRepository.save(receiptOrm);
+    const savedOrm   = await this.receiptOrmRepository.save(receiptOrm);
     return this.findById(savedOrm.id_comprobante) as Promise<SalesReceipt>;
   }
 
   async findById(id: number): Promise<SalesReceipt | null> {
     const receiptOrm = await this.receiptOrmRepository.findOne({
-      where: { id_comprobante: id },
-      relations: [
-        'details',
-        'cliente',
-        'tipoVenta',
-        'tipoComprobante',
-        'moneda',
-      ],
+      where:     { id_comprobante: id },
+      relations: ['details', 'cliente', 'tipoVenta', 'tipoComprobante', 'moneda'],
     });
     return receiptOrm ? SalesReceiptMapper.toDomain(receiptOrm) : null;
   }
 
   async update(receipt: SalesReceipt): Promise<SalesReceipt> {
     const receiptOrm = SalesReceiptMapper.toOrm(receipt);
-    const updated = await this.receiptOrmRepository.save(receiptOrm);
+    const updated    = await this.receiptOrmRepository.save(receiptOrm);
     return SalesReceiptMapper.toDomain(updated);
   }
 
@@ -70,9 +61,9 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
 
   async findBySerie(serie: string): Promise<SalesReceipt[]> {
     const receiptsOrm = await this.receiptOrmRepository.find({
-      where: { serie },
+      where:     { serie },
       relations: ['details'],
-      order: { numero: 'DESC' },
+      order:     { numero: 'DESC' },
     });
     return receiptsOrm.map((r) => SalesReceiptMapper.toDomain(r));
   }
@@ -97,9 +88,7 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
       query.andWhere('receipt.estado = :estado', { estado: filters.estado });
     }
     if (filters?.fec_desde) {
-      query.andWhere('receipt.fec_emision >= :fec_desde', {
-        fec_desde: filters.fec_desde,
-      });
+      query.andWhere('receipt.fec_emision >= :fec_desde', { fec_desde: filters.fec_desde });
     }
     if (filters?.fec_hasta) {
       const hasta = new Date(filters.fec_hasta);
@@ -107,14 +96,10 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
       query.andWhere('receipt.fec_emision <= :fec_hasta', { fec_hasta: hasta });
     }
     if (filters?.id_cliente) {
-      query.andWhere('cliente.id_cliente = :id_cliente', {
-        id_cliente: filters.id_cliente,
-      });
+      query.andWhere('cliente.id_cliente = :id_cliente', { id_cliente: filters.id_cliente });
     }
     if (filters?.id_tipo_comprobante) {
-      query.andWhere('tipoComprobante.id_tipo_comprobante = :typeId', {
-        typeId: filters.id_tipo_comprobante,
-      });
+      query.andWhere('tipoComprobante.id_tipo_comprobante = :typeId', { typeId: filters.id_tipo_comprobante });
     }
     if (filters?.search) {
       query.andWhere(
@@ -136,10 +121,7 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
     return lastReceipt ? Number(lastReceipt.numero) + 1 : 1;
   }
 
-  async updateStatus(
-    id: number,
-    status: string,
-  ): Promise<SalesReceiptOrmEntity> {
+  async updateStatus(id: number, status: string): Promise<SalesReceiptOrmEntity> {
     const dataToUpdate = await this.receiptOrmRepository.findOne({
       where: { id_comprobante: id },
     });
@@ -150,13 +132,13 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
 
   async findByCorrelativo(serie: string, numero: number): Promise<any | null> {
     return await this.receiptOrmRepository.findOne({
-      where: { serie: serie.trim(), numero },
+      where:     { serie: serie.trim(), numero },
       relations: ['details'],
     });
   }
 
   async getKpiSemanal(sedeId?: number): Promise<SalesReceiptKpiRaw> {
-    const ahora = new Date();
+    const ahora     = new Date();
     const diaSemana = ahora.getDay();
     const diffLunes = diaSemana === 0 ? 6 : diaSemana - 1;
 
@@ -170,10 +152,7 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
 
     const qb = this.receiptOrmRepository
       .createQueryBuilder('r')
-      .where('r.fec_emision BETWEEN :desde AND :hasta', {
-        desde: lunes,
-        hasta: domingo,
-      })
+      .where('r.fec_emision BETWEEN :desde AND :hasta', { desde: lunes, hasta: domingo })
       .andWhere('r.estado = :estado', { estado: 'EMITIDO' });
 
     if (sedeId) qb.andWhere('r.id_sede_ref = :sedeId', { sedeId });
@@ -186,15 +165,15 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
     ]);
 
     const row = await qb
-      .setParameter('boleta', 'B%')
+      .setParameter('boleta',  'B%')
       .setParameter('factura', 'F%')
       .getRawOne();
 
     return {
-      total_ventas: Number(row?.total_ventas ?? 0),
+      total_ventas:    Number(row?.total_ventas    ?? 0),
       cantidad_ventas: Number(row?.cantidad_ventas ?? 0),
-      total_boletas: Number(row?.total_boletas ?? 0),
-      total_facturas: Number(row?.total_facturas ?? 0),
+      total_boletas:   Number(row?.total_boletas   ?? 0),
+      total_facturas:  Number(row?.total_facturas  ?? 0),
     };
   }
 
@@ -204,8 +183,8 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
       id_cliente?: string;
       id_tipo_comprobante?: number;
       id_metodo_pago?: number;
-      fec_desde?: string;
-      fec_hasta?: string;
+      fec_desde?: Date | string;
+      fec_hasta?: Date | string;
       search?: string;
       sedeId?: number;
     },
@@ -216,42 +195,34 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
       .createQueryBuilder('r')
       .leftJoin('r.cliente', 'c')
       .leftJoin('r.tipoComprobante', 'tc')
-      // ── JOIN a pago y tipo_pago via subquery (un comprobante puede tener un pago) ──
       .leftJoin('pago', 'p', 'p.id_comprobante = r.id_comprobante')
       .leftJoin('tipo_pago', 'tp', 'tp.id_tipo_pago = p.id_tipo_pago')
       .select([
-        'r.id_comprobante                                                                          AS id_comprobante',
-        'r.serie                                                                                   AS serie',
-        'r.numero                                                                                  AS numero',
-        'tc.descripcion                                                                            AS tipo_comprobante',
-        'r.fec_emision                                                                             AS fec_emision',
-        'COALESCE(NULLIF(TRIM(c.razon_social),""), NULLIF(TRIM(CONCAT(COALESCE(c.nombres,"")," ",COALESCE(c.apellidos,""))), ""), "—") AS cliente_nombre',
-        'COALESCE(c.valor_doc, "—")                                                               AS cliente_doc',
-        'r.id_responsable_ref                                                                      AS id_responsable',
-        'r.id_sede_ref                                                                             AS id_sede',
-        // ── CORREGIDO: descripcion real del tipo de pago ─────────────────────
-        'COALESCE(tp.descripcion, "N/A")                                                          AS metodo_pago',
-        'r.total                                                                                   AS total',
-        'r.estado                                                                                  AS estado',
+        'r.id_comprobante                                                                                                                AS id_comprobante',
+        'r.serie                                                                                                                         AS serie',
+        'r.numero                                                                                                                        AS numero',
+        'tc.descripcion                                                                                                                  AS tipo_comprobante',
+        'r.fec_emision                                                                                                                   AS fec_emision',
+        'COALESCE(NULLIF(TRIM(c.razon_social),""), NULLIF(TRIM(CONCAT(COALESCE(c.nombres,"")," ",COALESCE(c.apellidos,""))), ""), "—")  AS cliente_nombre',
+        'COALESCE(c.valor_doc, "—")                                                                                                     AS cliente_doc',
+        'r.id_responsable_ref                                                                                                           AS id_responsable',
+        'r.id_sede_ref                                                                                                                   AS id_sede',
+        'COALESCE(tp.descripcion, "N/A")                                                                                                AS metodo_pago',
+        'r.total                                                                                                                         AS total',
+        'r.estado                                                                                                                        AS estado',
       ]);
 
     if (filters.estado) {
       qb.andWhere('r.estado = :estado', { estado: filters.estado });
     }
     if (filters.id_cliente) {
-      qb.andWhere('c.id_cliente = :id_cliente', {
-        id_cliente: filters.id_cliente,
-      });
+      qb.andWhere('c.id_cliente = :id_cliente', { id_cliente: filters.id_cliente });
     }
     if (filters.id_tipo_comprobante) {
-      qb.andWhere('tc.id_tipo_comprobante = :tipo', {
-        tipo: filters.id_tipo_comprobante,
-      });
+      qb.andWhere('tc.id_tipo_comprobante = :tipo', { tipo: filters.id_tipo_comprobante });
     }
     if (filters.id_metodo_pago) {
-      qb.andWhere('p.id_tipo_pago = :metodo', {
-        metodo: filters.id_metodo_pago,
-      });
+      qb.andWhere('p.id_tipo_pago = :metodo', { metodo: filters.id_metodo_pago });
     }
     if (filters.fec_desde) {
       qb.andWhere('r.fec_emision >= :desde', { desde: filters.fec_desde });
@@ -274,95 +245,95 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
     qb.orderBy('r.fec_emision', 'DESC');
 
     const totalRows = await qb.getRawMany();
-    const total = totalRows.length;
+    const total     = totalRows.length;
 
     qb.offset((page - 1) * limit).limit(limit);
     const rows = await qb.getRawMany();
 
     return [
       rows.map((r) => ({
-        id_comprobante: Number(r.id_comprobante),
-        serie: r.serie,
-        numero: Number(r.numero),
+        id_comprobante:   Number(r.id_comprobante),
+        serie:            r.serie,
+        numero:           Number(r.numero),
         tipo_comprobante: r.tipo_comprobante ?? '—',
-        fec_emision: r.fec_emision,
-        cliente_nombre: r.cliente_nombre ?? '—',
-        cliente_doc: r.cliente_doc ?? '—',
-        id_responsable: r.id_responsable,
-        id_sede: Number(r.id_sede),
-        metodo_pago: r.metodo_pago ?? 'N/A',
-        total: Number(r.total),
-        estado: r.estado,
+        fec_emision:      r.fec_emision,
+        cliente_nombre:   r.cliente_nombre   ?? '—',
+        cliente_doc:      r.cliente_doc      ?? '—',
+        id_responsable:   r.id_responsable,
+        id_sede:          Number(r.id_sede),
+        metodo_pago:      r.metodo_pago      ?? 'N/A',
+        total:            Number(r.total),
+        estado:           r.estado,
       })),
       total,
     ];
   }
+
   async findDetalleCompleto(id_comprobante: number): Promise<any> {
     const comprobante = await this.receiptOrmRepository
       .createQueryBuilder('r')
       .leftJoin('r.cliente', 'c')
+      .leftJoin('c.tipoDocumento', 'td')
       .leftJoin('r.tipoComprobante', 'tc')
       .leftJoin('pago', 'p', 'p.id_comprobante = r.id_comprobante')
       .leftJoin('tipo_pago', 'tp', 'tp.id_tipo_pago = p.id_tipo_pago')
       .select([
-        'r.id_comprobante        AS id_comprobante',
-        'r.serie                 AS serie',
-        'r.numero                AS numero',
-        'tc.descripcion          AS tipo_comprobante',
-        'r.fec_emision           AS fec_emision',
-        'r.fec_venc              AS fec_venc',
-        'r.subtotal              AS subtotal',
-        'r.igv                   AS igv',
-        'r.total                 AS total',
-        'r.estado                AS estado',
-        'r.id_responsable_ref    AS id_responsable',
-        'r.id_sede_ref           AS id_sede',
-        'COALESCE(tp.descripcion, "N/A") AS metodo_pago',
-        'c.id_cliente            AS cliente_id',
-        'COALESCE(c.razon_social, CONCAT(COALESCE(c.nombres,""), " ", COALESCE(c.apellidos,""))) AS cliente_nombre',
-        'COALESCE(c.valor_doc, "—")  AS cliente_doc',
-        'COALESCE(c.direccion,  "")  AS cliente_direccion',
-        'COALESCE(c.email,      "")  AS cliente_email',
-        'COALESCE(c.telefono,   "")  AS cliente_telefono',
+        'r.id_comprobante                                                                                                                               AS id_comprobante',
+        'r.serie                                                                                                                                        AS serie',
+        'r.numero                                                                                                                                       AS numero',
+        'tc.descripcion                                                                                                                                 AS tipo_comprobante',
+        'r.fec_emision                                                                                                                                  AS fec_emision',
+        'r.fec_venc                                                                                                                                     AS fec_venc',
+        'r.subtotal                                                                                                                                     AS subtotal',
+        'r.igv                                                                                                                                          AS igv',
+        'r.total                                                                                                                                        AS total',
+        'r.estado                                                                                                                                       AS estado',
+        'r.id_responsable_ref                                                                                                                           AS id_responsable',
+        'r.id_sede_ref                                                                                                                                  AS id_sede',
+        'COALESCE(tp.descripcion, "N/A")                                                                                                               AS metodo_pago',
+        'c.id_cliente                                                                                                                                   AS cliente_id',
+        'COALESCE(NULLIF(TRIM(c.razon_social),""), NULLIF(TRIM(CONCAT(COALESCE(c.nombres,"")," ",COALESCE(c.apellidos,""))), ""), "—")                 AS cliente_nombre',
+        'COALESCE(c.valor_doc,   "—")                                                                                                                  AS cliente_doc',
+        'COALESCE(td.descripcion, "—")                                                                                                                 AS cliente_tipo_doc',
+        'COALESCE(c.direccion,   "")                                                                                                                   AS cliente_direccion',
+        'COALESCE(c.email,       "")                                                                                                                   AS cliente_email',
+        'COALESCE(c.telefono,    "")                                                                                                                   AS cliente_telefono',
       ])
       .where('r.id_comprobante = :id', { id: id_comprobante })
       .getRawOne();
 
     if (!comprobante) return null;
 
-    // Productos del comprobante
     const productos = await this.receiptOrmRepository.manager
       .createQueryBuilder()
       .select([
-        'd.id_prod_ref           AS id_prod_ref',
-        'd.cod_prod              AS cod_prod',
-        'd.descripcion           AS descripcion',
-        'd.cantidad              AS cantidad',
-        'd.pre_uni               AS precio_unit',
-        'd.igv                   AS igv',
+        'd.id_prod_ref            AS id_prod_ref',
+        'd.cod_prod               AS cod_prod',
+        'd.descripcion            AS descripcion',
+        'd.cantidad               AS cantidad',
+        'd.pre_uni                AS precio_unit',
+        'd.igv                    AS igv',
         '(d.cantidad * d.pre_uni) AS total',
       ])
       .from('detalle_comprobante', 'd')
       .where('d.id_comprobante = :id', { id: id_comprobante })
       .getRawMany();
 
-    // Historial del mismo cliente (últimas 10 excluyendo esta)
     const historial = await this.receiptOrmRepository
       .createQueryBuilder('r')
       .leftJoin('pago', 'p', 'p.id_comprobante = r.id_comprobante')
       .leftJoin('tipo_pago', 'tp', 'tp.id_tipo_pago = p.id_tipo_pago')
       .select([
-        'r.id_comprobante        AS id_comprobante',
-        'r.serie                 AS serie',
-        'r.numero                AS numero',
-        'r.fec_emision           AS fec_emision',
-        'r.total                 AS total',
-        'r.estado                AS estado',
+        'r.id_comprobante           AS id_comprobante',
+        'r.serie                    AS serie',
+        'r.numero                   AS numero',
+        'r.fec_emision              AS fec_emision',
+        'r.total                    AS total',
+        'r.estado                   AS estado',
+        'r.id_responsable_ref       AS id_responsable',
         'COALESCE(tp.descripcion, "N/A") AS metodo_pago',
       ])
-      .where('r.id_cliente = :id_cliente', {
-        id_cliente: comprobante.cliente_id,
-      })
+      .where('r.id_cliente = :id_cliente', { id_cliente: comprobante.cliente_id })
       .andWhere('r.id_comprobante != :id', { id: id_comprobante })
       .orderBy('r.fec_emision', 'DESC')
       .limit(10)

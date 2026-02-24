@@ -15,6 +15,7 @@ export class SalesReceiptHistorialItemDto {
   total: number;
   estado: string;
   metodo_pago: string;
+  responsable: string;
 }
 
 export class SalesReceiptDetalleCompletoDto {
@@ -36,6 +37,7 @@ export class SalesReceiptDetalleCompletoDto {
     id_cliente: string;
     nombre: string;
     documento: string;
+    tipo_documento: string;
     direccion: string;
     email: string;
     telefono: string;
