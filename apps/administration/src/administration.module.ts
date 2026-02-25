@@ -22,6 +22,7 @@ import { HeadquartersModule } from './core/headquarters/headquarters.module';
 import { UsersTcpController } from './core/user/infrastructure/adapters/in/TCP/users-tcp.controller';
 import { CuentaRolOrmEntity } from './core/user/infrastructure/entity/cuenta-rol-orm.entity';
 import { CuentaUsuarioOrmEntity } from './core/user/infrastructure/entity/cuenta-usuario-orm.entity';
+
 @Module({
   imports: [
     // Configuración de variables de entorno
