@@ -199,6 +199,7 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
       total_facturas: Number(row?.total_facturas ?? 0),
     };
   }
+
   async findAllPaginated(
     filters: {
       estado?: string;
@@ -213,7 +214,6 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
     page: number,
     limit: number,
   ): Promise<[SalesReceiptSummaryRaw[], number]> {
-    // ── JOIN de pago ─────────────────────────────────────────────────────────
     const pagoJoin = filters.id_metodo_pago
       ? `INNER JOIN mkp_ventas.pago p ON p.id_comprobante = r.id_comprobante AND p.id_tipo_pago = ?`
       : `LEFT  JOIN mkp_ventas.pago p ON p.id_comprobante = r.id_comprobante`;
@@ -222,7 +222,6 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
       ? [filters.id_metodo_pago]
       : [];
 
-    // ── WHERE dinámico (sin id_metodo_pago, ya está en el JOIN) ──────────────
     const conditions: string[] = [];
     const whereParams: any[] = [];
 
@@ -263,39 +262,36 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
     const whereClause =
       conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // ── Params finales: JOIN primero, luego WHERE ─────────────────────────────
     const allParams = [...joinParams, ...whereParams];
 
     const baseQuery = `
     FROM mkp_ventas.comprobante_venta r
-    INNER JOIN mkp_ventas.cliente          c  ON c.id_cliente            = r.id_cliente
-    INNER JOIN mkp_ventas.tipo_comprobante tc ON tc.id_tipo_comprobante  = r.id_tipo_comprobante
+    INNER JOIN mkp_ventas.cliente          c  ON c.id_cliente           = r.id_cliente
+    INNER JOIN mkp_ventas.tipo_comprobante tc ON tc.id_tipo_comprobante = r.id_tipo_comprobante
     ${pagoJoin}
-    LEFT  JOIN mkp_ventas.tipo_pago        tp ON tp.id_tipo_pago         = p.id_tipo_pago
+    LEFT  JOIN mkp_ventas.tipo_pago        tp ON tp.id_tipo_pago        = p.id_tipo_pago
     ${whereClause}
   `;
 
-    // ── Conteo ───────────────────────────────────────────────────────────────
     const countResult = await this.dataSource.query(
       `SELECT COUNT(DISTINCT r.id_comprobante) AS total ${baseQuery}`,
       allParams,
     );
     const total = Number(countResult[0]?.total ?? 0);
 
-    // ── Datos paginados ───────────────────────────────────────────────────────
     const offset = (page - 1) * limit;
     const rows = await this.dataSource.query(
       `SELECT
       r.id_comprobante,
       r.serie,
       r.numero,
-      tc.descripcion                                                                                                                   AS tipo_comprobante,
+      tc.descripcion AS tipo_comprobante,
       r.fec_emision,
-      COALESCE(NULLIF(TRIM(c.razon_social),''), NULLIF(TRIM(CONCAT(COALESCE(c.nombres,''),' ',COALESCE(c.apellidos,''))), ''), '—')   AS cliente_nombre,
-      COALESCE(c.valor_doc, '—')                                                                                                      AS cliente_doc,
-      r.id_responsable_ref                                                                                                            AS id_responsable,
-      r.id_sede_ref                                                                                                                   AS id_sede,
-      COALESCE(tp.descripcion, 'N/A')                                                                                                 AS metodo_pago,
+      COALESCE(NULLIF(TRIM(c.razon_social),''), NULLIF(TRIM(CONCAT(COALESCE(c.nombres,''),' ',COALESCE(c.apellidos,''))), ''), '—') AS cliente_nombre,
+      COALESCE(c.valor_doc, '—') AS cliente_doc,
+      r.id_responsable_ref AS id_responsable,
+      r.id_sede_ref        AS id_sede,
+      COALESCE(tp.descripcion, 'N/A') AS metodo_pago,
       r.total,
       r.estado
     ${baseQuery}
@@ -322,8 +318,12 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
       total,
     ];
   }
-
-  async findDetalleCompleto(id_comprobante: number): Promise<any> {
+  
+  async findDetalleCompleto(
+    id_comprobante: number,
+    historialPage: number = 1,
+    historialLimit: number = 5,
+  ): Promise<any> {
     const comprobante = await this.receiptOrmRepository
       .createQueryBuilder('r')
       .leftJoin('r.cliente', 'c')
@@ -358,44 +358,84 @@ export class SalesReceiptRepository implements ISalesReceiptRepositoryPort {
 
     if (!comprobante) return null;
 
-    // En findDetalleCompleto, reemplazar el query de productos:
+    // ── Productos ────────────────────────────────────────────────────────────
     const productos = await this.receiptOrmRepository.manager
       .createQueryBuilder()
       .select([
-        'd.id_prod_ref                              AS id_prod_ref',
-        'COALESCE(d.cod_prod, d.id_prod_ref)        AS cod_prod',
-        'd.descripcion                              AS descripcion',
-        'd.cantidad                                 AS cantidad',
-        'd.pre_uni                                  AS precio_unit',
-        'd.igv                                      AS igv',
-        '(d.cantidad * d.pre_uni)                   AS total',
+        'd.id_prod_ref                           AS id_prod_ref',
+        'COALESCE(d.cod_prod, d.id_prod_ref)     AS cod_prod',
+        'd.descripcion                           AS descripcion',
+        'd.cantidad                              AS cantidad',
+        'd.pre_uni                               AS precio_unit',
+        'd.igv                                   AS igv',
+        '(d.cantidad * d.pre_uni)                AS total',
       ])
       .from('detalle_comprobante', 'd')
       .where('d.id_comprobante = :id', { id: id_comprobante })
       .getRawMany();
+
+    // ── Historial: COUNT total real del cliente (excluyendo este comprobante) ─
+    const historialCountRow = await this.receiptOrmRepository
+      .createQueryBuilder('r')
+      .select('COUNT(r.id_comprobante) AS total')
+      .where('r.id_cliente = :id_cliente', {
+        id_cliente: comprobante.cliente_id,
+      })
+      .andWhere('r.id_comprobante != :id', { id: id_comprobante })
+      .getRawOne();
+
+    const historialTotal = Number(historialCountRow?.total ?? 0);
+
+    // ── Stats globales del cliente (sobre TODOS sus comprobantes, no solo la página) ─
+    const statsRow = await this.receiptOrmRepository
+      .createQueryBuilder('r')
+      .select([
+        'COALESCE(SUM(CASE WHEN r.estado != :anulado THEN r.total ELSE 0 END), 0) AS total_gastado',
+        'COUNT(CASE WHEN r.estado != :anulado THEN 1 END) AS cantidad_compras',
+      ])
+      .where('r.id_cliente = :id_cliente', {
+        id_cliente: comprobante.cliente_id,
+      })
+      .setParameter('anulado', 'ANULADO')
+      .getRawOne();
+
+    // ── Historial paginado ───────────────────────────────────────────────────
+    const historialOffset = (historialPage - 1) * historialLimit;
 
     const historial = await this.receiptOrmRepository
       .createQueryBuilder('r')
       .leftJoin('pago', 'p', 'p.id_comprobante = r.id_comprobante')
       .leftJoin('tipo_pago', 'tp', 'tp.id_tipo_pago = p.id_tipo_pago')
       .select([
-        'r.id_comprobante           AS id_comprobante',
-        'r.serie                    AS serie',
-        'r.numero                   AS numero',
-        'r.fec_emision              AS fec_emision',
-        'r.total                    AS total',
-        'r.estado                   AS estado',
-        'r.id_responsable_ref       AS id_responsable',
-        'COALESCE(tp.descripcion, "N/A") AS metodo_pago',
+        'r.id_comprobante                    AS id_comprobante',
+        'r.serie                             AS serie',
+        'r.numero                            AS numero',
+        'r.fec_emision                       AS fec_emision',
+        'r.total                             AS total',
+        'r.estado                            AS estado',
+        'r.id_responsable_ref                AS id_responsable',
+        'COALESCE(tp.descripcion, "N/A")     AS metodo_pago',
       ])
       .where('r.id_cliente = :id_cliente', {
         id_cliente: comprobante.cliente_id,
       })
       .andWhere('r.id_comprobante != :id', { id: id_comprobante })
       .orderBy('r.fec_emision', 'DESC')
-      .limit(10)
+      .limit(historialLimit)
+      .offset(historialOffset)
       .getRawMany();
 
-    return { comprobante, productos, historial };
+    return {
+      comprobante,
+      productos,
+      historial,
+      historialTotal,
+      historialPage,
+      historialLimit,
+      statsCliente: {
+        total_gastado: Number(statsRow?.total_gastado ?? 0),
+        cantidad_compras: Number(statsRow?.cantidad_compras ?? 0),
+      },
+    };
   }
 }

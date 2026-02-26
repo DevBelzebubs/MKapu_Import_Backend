@@ -228,12 +228,19 @@ export class SalesReceiptQueryService implements ISalesReceiptQueryPort {
 
   async getDetalleCompleto(
     id_comprobante: number,
+    historialPage: number = 1,
   ): Promise<SalesReceiptDetalleCompletoDto | null> {
-    const raw =
-      await this.receiptRepository.findDetalleCompleto(id_comprobante);
+    const HISTORIAL_LIMIT = 5;
+
+    const raw = await this.receiptRepository.findDetalleCompleto(
+      id_comprobante,
+      historialPage,
+      HISTORIAL_LIMIT,
+    );
     if (!raw) return null;
 
-    const { comprobante, productos, historial } = raw;
+    const { comprobante, productos, historial, historialTotal, statsCliente } =
+      raw;
 
     const idResponsablePrincipal = Number(comprobante.id_responsable);
 
@@ -252,7 +259,6 @@ export class SalesReceiptQueryService implements ISalesReceiptQueryPort {
       ]),
     ];
 
-    // ── Extraer ids de productos para consultar códigos reales ──────────────
     const productIds = [
       ...new Set(
         (productos as any[])
@@ -263,7 +269,7 @@ export class SalesReceiptQueryService implements ISalesReceiptQueryPort {
 
     const idSede = Number(comprobante.id_sede);
 
-    // ── TCP en paralelo — ahora incluye logística ───────────────────────────
+    // ── 3 TCP en paralelo ────────────────────────────────────────────────────
     const [usuarios, sedeInfo, codigoMap] = await Promise.all([
       todosIds.length > 0
         ? this.usersTcpProxy.findByIds(todosIds)
@@ -284,19 +290,16 @@ export class SalesReceiptQueryService implements ISalesReceiptQueryPort {
     const nombreCliente =
       comprobante.cliente_nombre?.trim() || comprobante.cliente_doc || '—';
 
-    // ── Totales ──────────────────────────────────────────────────────────────
-    const totalHistorial = (historial as any[])
-      .filter((h) => h.estado !== 'ANULADO')
-      .reduce((sum, h) => sum + Number(h.total), 0);
-
-    const totalGastado =
+    // ── totalGastado y cantidadCompras vienen del repo (sobre TODOS los registros) ─
+    const totalGastadoFinal =
       comprobante.estado !== 'ANULADO'
-        ? totalHistorial + Number(comprobante.total)
-        : totalHistorial;
+        ? statsCliente.total_gastado
+        : statsCliente.total_gastado - Number(comprobante.total);
 
-    const cantidadCompras =
-      (historial as any[]).filter((h) => h.estado !== 'ANULADO').length +
-      (comprobante.estado !== 'ANULADO' ? 1 : 0);
+    const cantidadComprasFinal =
+      comprobante.estado !== 'ANULADO'
+        ? statsCliente.cantidad_compras
+        : statsCliente.cantidad_compras - 1;
 
     return {
       id_comprobante: Number(comprobante.id_comprobante),
@@ -319,14 +322,12 @@ export class SalesReceiptQueryService implements ISalesReceiptQueryPort {
         direccion: comprobante.cliente_direccion,
         email: comprobante.cliente_email,
         telefono: comprobante.cliente_telefono,
-        total_gastado_cliente: totalGastado,
-        cantidad_compras: cantidadCompras,
+        total_gastado_cliente: totalGastadoFinal,
+        cantidad_compras: cantidadComprasFinal,
       },
 
-      // ── cod_prod enriquecido desde logística ────────────────────────────
       productos: (productos as any[]).map((p) => {
-        const idProd = Number(p.id_prod_ref);
-        const codigoReal = codigoMap.get(idProd);
+        const codigoReal = codigoMap.get(Number(p.id_prod_ref));
         return {
           id_prod_ref: p.id_prod_ref,
           cod_prod: codigoReal ?? p.cod_prod ?? p.id_prod_ref,
@@ -354,6 +355,13 @@ export class SalesReceiptQueryService implements ISalesReceiptQueryPort {
         metodo_pago: h.metodo_pago,
         responsable: usuarioMap.get(Number(h.id_responsable)) ?? '—',
       })),
+
+      historial_pagination: {
+        total: historialTotal,
+        page: historialPage,
+        limit: HISTORIAL_LIMIT,
+        total_pages: Math.ceil(historialTotal / HISTORIAL_LIMIT),
+      },
     };
   }
 }
