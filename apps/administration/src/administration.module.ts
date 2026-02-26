@@ -20,6 +20,9 @@ import { RoleModule } from './core/role/role.module';
 import { HeadquartersModule } from './core/headquarters/headquarters.module';
 
 import { UsersTcpController } from './core/user/infrastructure/adapters/in/TCP/users-tcp.controller';
+import { CuentaRolOrmEntity } from './core/user/infrastructure/entity/cuenta-rol-orm.entity';
+import { CuentaUsuarioOrmEntity } from './core/user/infrastructure/entity/cuenta-usuario-orm.entity';
+
 @Module({
   imports: [
     // Configuración de variables de entorno
@@ -38,7 +41,14 @@ import { UsersTcpController } from './core/user/infrastructure/adapters/in/TCP/u
         username: configService.get('ADMIN_DB_USERNAME'),
         password: configService.get('ADMIN_DB_PASSWORD') || '',
         database: configService.get('ADMIN_DB_DATABASE'),
-        entities: [UserOrmEntity, HeadquartersOrmEntity, RoleOrmEntity, PermissionOrmEntity],
+        entities: [
+          UserOrmEntity,
+          HeadquartersOrmEntity,
+          RoleOrmEntity,
+          PermissionOrmEntity,
+          CuentaUsuarioOrmEntity,  
+          CuentaRolOrmEntity,             
+        ],
         synchronize: false
         ,
         logging: true,
