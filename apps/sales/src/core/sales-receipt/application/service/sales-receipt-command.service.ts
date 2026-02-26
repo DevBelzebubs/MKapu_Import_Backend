@@ -119,7 +119,6 @@ export class SalesReceiptCommandService implements ISalesReceiptCommandPort {
 
     return SalesReceiptMapper.toResponseDto(savedReceiptDomain);
   }
-
   private async annulReceiptDueToStockFailure(receiptId: number): Promise<void> {
     const queryRunner = this.receiptRepository.getQueryRunner();
     try {

@@ -31,7 +31,7 @@ import { StockOrmEntity } from '../../../inventory/infrastructure/entity/stock-o
 
 // Servicios Externos
 import { TransferWebsocketGateway } from '../../infrastructure/adapters/out/transfer-websocket.gateway';
-import { InventoryCommandService } from '../../../inventory/application/service/inventory-command.service';
+import { InventoryCommandService } from '../../../inventory/application/service/inventory/inventory-command.service';
 
 @Injectable()
 export class TransferCommandService implements TransferPortsIn {

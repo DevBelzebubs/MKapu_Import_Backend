@@ -6,39 +6,56 @@ import { InventoryMovementDetailOrmEntity } from './infrastructure/entity/invent
 import { StockOrmEntity } from './infrastructure/entity/stock-orm-entity';
 import { WarehouseOrmEntity } from '../infrastructure/entity/warehouse-orm.entity';
 
-import { InventoryCommandService } from './application/service/inventory-command.service';
+import { InventoryCommandService } from './application/service/inventory/inventory-command.service';
 import { InventoryTypeOrmRepository } from './infrastructure/adapters/out/repository/inventory-typeorm.repository';
 import { InventoryMovementRestController } from './infrastructure/adapters/in/controllers/inventory-rest.controller';
-import { InventoryQueryService } from './application/service/inventory-query.service';
+import { ConteoInventarioOrmEntity } from './infrastructure/entity/inventory-count-orm.entity';
+import { ConteoInventarioDetalleOrmEntity } from './infrastructure/entity/inventory-count-detail-orm.entity';
+import { InventoryCountController } from './infrastructure/adapters/in/controllers/inventory-count.controller';
+import { InventoryCountRepository } from './infrastructure/adapters/out/repository/inventory-count.repository';
+import { InventoryCountCommandService } from './application/service/count/inventory-count-command.service';
+import { InventoryCountQueryService } from './application/service/count/inventory-count-query.service';
+import { InventoryQueryService } from './application/service/inventory/inventory-query.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       InventoryMovementOrmEntity,
       InventoryMovementDetailOrmEntity,
+      ConteoInventarioOrmEntity,
+      ConteoInventarioDetalleOrmEntity,
       StockOrmEntity,
       WarehouseOrmEntity,
     ]),
   ],
-  controllers: [InventoryMovementRestController],
+  controllers: [InventoryMovementRestController, InventoryCountController],
   providers: [
     {
       provide: 'IInventoryMovementCommandPort',
       useClass: InventoryCommandService,
     },
     InventoryCommandService,
-    InventoryQueryService,          
+    InventoryQueryService,
     InventoryTypeOrmRepository,
     {
       provide: 'IInventoryRepositoryPort',
       useClass: InventoryTypeOrmRepository,
     },
+    {
+      provide: 'IInventoryCountRepository',
+      useClass: InventoryCountRepository,
+    },
+    InventoryCountCommandService,
+    InventoryCountQueryService,
   ],
   exports: [
     InventoryCommandService,
-    InventoryQueryService,          
+    InventoryQueryService,
     InventoryTypeOrmRepository,
     'IInventoryRepositoryPort',
+    'IInventoryCountRepository',
+    InventoryCountCommandService,
+    InventoryCountQueryService,
   ],
 })
 export class InventoryModule {}
