@@ -6,6 +6,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { InventoryMovementOrmEntity } from './inventory-movement-orm.entity';
+import { ProductOrmEntity } from 'apps/logistics/src/core/catalog/product/infrastructure/entity/product-orm.entity';
+import { WarehouseOrmEntity } from '../../../infrastructure/entity/warehouse-orm.entity';
 
 @Entity({ name: 'detalle_movimiento_inventario', schema: 'mkp_logistica' })
 export class InventoryMovementDetailOrmEntity {
@@ -15,11 +17,13 @@ export class InventoryMovementDetailOrmEntity {
   @Column({ name: 'id_movimiento' })
   movementId: number;
 
-  @Column({ name: 'id_producto' })
-  productId: number;
+  @ManyToOne(() => ProductOrmEntity)
+  @JoinColumn({ name: 'id_producto' })
+  product: ProductOrmEntity;
 
-  @Column({ name: 'id_almacen' })
-  warehouseId: number;
+  @ManyToOne(() => WarehouseOrmEntity)
+  @JoinColumn({ name: 'id_almacen' })
+  warehouse: WarehouseOrmEntity;
 
   @Column({ name: 'cantidad' })
   quantity: number;

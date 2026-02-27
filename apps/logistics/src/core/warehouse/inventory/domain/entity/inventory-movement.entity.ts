@@ -31,7 +31,13 @@ export class InventoryMovement {
     observation: string,
   ): InventoryMovement {
     const inventoryDetails = items.map(
-      (item) => new InventoryDetail(item.productId, item.warehouseId, item.quantity, 'SALIDA'),
+      (item) =>
+        new InventoryDetail(
+          item.productId,
+          item.warehouseId,
+          item.quantity,
+          'SALIDA',
+        ),
     );
     return new InventoryMovement({
       originType: 'AJUSTE',
@@ -43,11 +49,25 @@ export class InventoryMovement {
   }
 
   // Getters
-  get id() { return this.props.id; }
-  get originType() { return this.props.originType; }
-  get refId() { return this.props.refId; }
-  get refTable() { return this.props.refTable; }
-  get observation() { return this.props.observation; }
-  get items() { return this.props.items; }
-  get date() { return this.props.date; }
+  get id() {
+    return this.props.id;
+  }
+  get originType() {
+    return this.props.originType;
+  }
+  get refId() {
+    return this.props.refId;
+  }
+  get refTable() {
+    return this.props.refTable;
+  }
+  get observation() {
+    return this.props.observation;
+  }
+  get items() {
+    return this.props.items;
+  }
+  get date() {
+    return this.props.date;
+  }
 }

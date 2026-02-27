@@ -1,5 +1,5 @@
 import { InventoryMovement } from '../../entity/inventory-movement.entity';
-import { Stock } from '../../entity/stock-domain-intity';
+import { Stock } from '../../entity/stock-domain-entity';
 
 export interface IInventoryRepositoryPort {
   saveMovement(movement: InventoryMovement): Promise<void>;

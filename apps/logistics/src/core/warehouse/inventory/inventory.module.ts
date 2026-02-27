@@ -16,6 +16,7 @@ import { InventoryCountRepository } from './infrastructure/adapters/out/reposito
 import { InventoryCountCommandService } from './application/service/count/inventory-count-command.service';
 import { InventoryCountQueryService } from './application/service/count/inventory-count-query.service';
 import { InventoryQueryService } from './application/service/inventory/inventory-query.service';
+import { SedeOrmEntity } from '../../catalog/product/infrastructure/entity/sede-orm.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { InventoryQueryService } from './application/service/inventory/inventory
       ConteoInventarioDetalleOrmEntity,
       StockOrmEntity,
       WarehouseOrmEntity,
+      SedeOrmEntity,
     ]),
   ],
   controllers: [InventoryMovementRestController, InventoryCountController],
