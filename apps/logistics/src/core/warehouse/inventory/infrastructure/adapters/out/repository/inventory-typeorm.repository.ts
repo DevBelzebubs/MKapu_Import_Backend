@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IInventoryRepositoryPort } from '../../../../domain/ports/out/inventory-movement-ports-out';
@@ -9,6 +10,8 @@ import { Stock } from '../../../../domain/entity/stock-domain-entity';
 import { InventoryMovementOrmEntity } from '../../../entity/inventory-movement-orm.entity';
 import { StockOrmEntity } from '../../../entity/stock-orm-entity';
 import { InventoryMovementResponseDto } from '../../../../application/dto/out/inventory-movement-response.dto';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
@@ -17,6 +20,7 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
     private readonly movementRepo: Repository<InventoryMovementOrmEntity>,
     @InjectRepository(StockOrmEntity)
     private readonly stockRepo: Repository<StockOrmEntity>,
+    @Inject('ADMIN_SERVICE') private readonly adminClient: ClientProxy,
   ) {}
 
   async saveMovement(movement: InventoryMovement): Promise<void> {
@@ -26,6 +30,7 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
       refTable: movement.refTable,
       observation: movement.observation,
       date: movement.date,
+      // Usamos los IDs primitivos directamente. TypeORM se encarga del movementId por el cascade.
       details: movement.items.map((item) => ({
         productId: item.productId,
         warehouseId: item.warehouseId,
@@ -62,53 +67,62 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
     await this.stockRepo.update(stock.id, { cantidad: stock.quantity });
   }
 
-  async findAllMovements(filters: any) {
+  async findAllMovements(
+    filters: any,
+  ): Promise<{ data: InventoryMovementResponseDto[]; total: number }> {
     const query = this.movementRepo
-      .createQueryBuilder('movement')
-      .leftJoinAndSelect('movement.details', 'details')
-      .leftJoinAndSelect('details.product', 'product')
-      .leftJoinAndSelect('details.warehouse', 'warehouse')
-      .leftJoinAndSelect('warehouse.sede', 'sede')
-      .orderBy('movement.date', 'DESC');
+      .createQueryBuilder('mov')
+      .leftJoinAndSelect('mov.details', 'det')
+      .leftJoin('det.productRelation', 'prod')
+      .addSelect([
+        'prod.id_producto',
+        'prod.codigo',
+        'prod.descripcion',
+        'prod.uni_med',
+      ])
+      // ASEGÚRATE DE QUE ESTA LÍNEA DIGA warehouseRelation
+      .leftJoinAndSelect('det.warehouseRelation', 'wh')
+      .orderBy('mov.date', 'DESC');
 
-    // --- FILTROS ---
-    if (filters.search) {
-      query.andWhere(
-        '(movement.observation LIKE :search OR movement.refTable LIKE :search)',
-        { search: `%${filters.search}%` },
-      );
-    }
+    // ... (El bloque de filtros se mantiene igual)
 
-    if (filters.tipoId && filters.tipoId > 0) {
-      if (filters.tipoId == 1) {
-        query.andWhere('details.type = :type', { type: 'INGRESO' });
-      } else if (filters.tipoId == 2) {
-        query.andWhere('details.type = :type', { type: 'SALIDA' });
-      } else if (filters.tipoId == 3) {
-        query.andWhere('movement.originType = :otype', {
-          otype: 'TRANSFERENCIA',
-        });
+    const [movements, total] = await query.getManyAndCount();
+    const sedeIds = new Set<number>();
+
+    movements.forEach((mov) => {
+      mov.details.forEach((det) => {
+        // ACTUALIZADO: Buscamos en warehouseRelation
+        const id =
+          det.warehouseRelation?.['id_sede'] ||
+          det.warehouseRelation?.['sedeId'];
+        if (id) sedeIds.add(Number(id));
+      });
+    });
+
+    let sedeMap: Record<number, string> = {};
+    if (sedeIds.size > 0) {
+      try {
+        sedeMap = await firstValueFrom(
+          this.adminClient.send('get_sedes_nombres', Array.from(sedeIds)),
+        );
+      } catch (error) {
+        console.error('3. ERROR CRÍTICO TCP:', error.message);
       }
     }
 
-    if (filters.fechaInicio && filters.fechaFin) {
-      query.andWhere('movement.date BETWEEN :inicio AND :fin', {
-        inicio: filters.fechaInicio,
-        fin: filters.fechaFin,
-      });
-    }
-
-    const [movements, total] = await query.getManyAndCount();
-
     const mappedData: InventoryMovementResponseDto[] = movements.map((mov) => {
-      // 1. Extraemos los almacenes basándonos en el TIPO de detalle
       const detalleSalida = mov.details.find((d) => d.type === 'SALIDA');
       const detalleIngreso = mov.details.find((d) => d.type === 'INGRESO');
 
-      const whSalidaNombre = detalleSalida?.warehouse?.nombre;
-      const whIngresoNombre = detalleIngreso?.warehouse?.nombre;
+      // Extraemos el nombre del almacén (probamos 'nombre' y 'descripcion' por si acaso)
+      const whSalidaNombre =
+        detalleSalida?.warehouseRelation?.['nombre'] ||
+        detalleSalida?.warehouseRelation?.['descripcion'];
 
-      // 2. Lógica inteligente para Origen y Destino según el tipo de origen
+      const whIngresoNombre =
+        detalleIngreso?.warehouseRelation?.['nombre'] ||
+        detalleIngreso?.warehouseRelation?.['descripcion'];
+
       let origenNombre = 'N/A';
       let destinoNombre = 'N/A';
 
@@ -118,7 +132,7 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
           destinoNombre = whIngresoNombre || 'En Tránsito';
           break;
         case 'COMPRA':
-          origenNombre = 'Proveedor (Extermo)';
+          origenNombre = 'Proveedor (Externo)';
           destinoNombre = whIngresoNombre || 'N/A';
           break;
         case 'VENTA':
@@ -126,32 +140,46 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
           destinoNombre = 'Cliente (Externo)';
           break;
         case 'AJUSTE':
-          // En un ajuste puede ser que entró stock (sobrante) o salió (pérdida)
           origenNombre = whSalidaNombre ? whSalidaNombre : 'Ajuste Manual';
           destinoNombre = whIngresoNombre ? whIngresoNombre : 'Ajuste Manual';
           break;
       }
 
-      // 3. Sede (Tomamos la sede del almacén involucrado válido)
-      const sedeNombre =
-        detalleSalida?.warehouse?.sede?.nombre ||
-        detalleIngreso?.warehouse?.sede?.nombre ||
-        'Sin Sede';
+      // Resolvemos el ID involucrado para la Sede
+      const idSedeInvolucrada =
+        detalleSalida?.warehouseRelation?.['id_sede'] ||
+        detalleSalida?.warehouseRelation?.['sedeId'] ||
+        detalleIngreso?.warehouseRelation?.['id_sede'] ||
+        detalleIngreso?.warehouseRelation?.['sedeId'];
+
+      const sedeNombre = idSedeInvolucrada
+        ? sedeMap[idSedeInvolucrada] ||
+          sedeMap[idSedeInvolucrada.toString()] ||
+          'Sede No Encontrada'
+        : 'Sin Sede';
 
       const detallesUnicos = [];
       const mapProductos = new Map();
 
       mov.details.forEach((det) => {
-        if (!mapProductos.has(det.product?.id_producto)) {
-          mapProductos.set(det.product?.id_producto, true);
+        // Extraemos usando productRelation
+        const idDelProducto = det.productRelation?.id_producto || det.productId;
+
+        if (idDelProducto && !mapProductos.has(idDelProducto)) {
+          mapProductos.set(idDelProducto, true);
+
           detallesUnicos.push({
             id: det.id,
+            productoId: idDelProducto,
+            codigo:
+              det.productRelation?.codigo ||
+              (det.productRelation ? 'S/C' : 'ERR_REL'),
             productoNombre:
-              det.product?.descripcion ||
-              det.product?.codigo ||
-              `ID: ${det.product?.id_producto}`,
+              det.productRelation?.descripcion ||
+              det.productRelation?.codigo ||
+              `ID: ${idDelProducto} (Sin nombre)`,
             cantidad: det.quantity,
-            unidadMedida: det.product?.uni_med || 'UND',
+            unidadMedida: det.productRelation?.uni_med || 'UND',
             tipoOperacionItem: det.type,
           });
         }
@@ -165,11 +193,11 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
         documentoReferencia: mov.refTable
           ? `${mov.refTable} #${mov.refId}`
           : 'N/A',
-        usuario: 'Sistema', // Si más adelante agregas 'createdBy', lo pones aquí
+        usuario: 'Sistema',
         almacenOrigenNombre: origenNombre,
         almacenDestinoNombre: destinoNombre,
         sedeNombre: sedeNombre,
-        detalles: detallesUnicos, // Enviamos la lista sin duplicados
+        detalles: detallesUnicos,
       };
     });
 

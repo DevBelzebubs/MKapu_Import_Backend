@@ -96,7 +96,7 @@ import { QuoteDetailOrmEntity } from './core/quote/infrastructure/entity/quote-o
           CommissionOrmEntity,
           CommissionRuleOrmEntity,
           QuoteDetailOrmEntity,
-          CustomerOrmEntity
+          CustomerOrmEntity,
         ],
         synchronize: false,
         logging: true,
@@ -124,7 +124,6 @@ import { QuoteDetailOrmEntity } from './core/quote/infrastructure/entity/quote-o
     ReportsModule,
     ClaimModule,
     CommissionModule,
-
   ],
   controllers: [SalesController, WarrantyRestController],
   providers: [

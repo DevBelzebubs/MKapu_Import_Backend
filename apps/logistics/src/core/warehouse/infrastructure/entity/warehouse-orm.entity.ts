@@ -1,12 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { BitToBooleanTransformer } from 'libs/common/src';
-import { SedeOrmEntity } from '../../../catalog/product/infrastructure/entity/sede-orm.entity';
 
 @Entity({ name: 'almacen', schema: 'mkp_logistica' })
 export class WarehouseOrmEntity {
@@ -45,8 +38,4 @@ export class WarehouseOrmEntity {
 
   @Column({ name: 'id_sede', type: 'int', nullable: true })
   sedeId?: number;
-
-  @ManyToOne(() => SedeOrmEntity)
-  @JoinColumn({ name: 'id_sede' })
-  sede: SedeOrmEntity;
 }

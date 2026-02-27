@@ -1,7 +1,11 @@
+/* eslint-disable prettier/prettier */
 import { Controller, Inject, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
 import { IHeadquartersQueryPort } from '../../../../domain/ports/in/headquarters-ports-in';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In } from 'typeorm';
+import { HeadquartersOrmEntity } from '../../../entity/headquarters-orm.entity';
 
 type GetSedeByIdPayload = {
   id_sede: string | number;
@@ -14,6 +18,8 @@ export class SedeTcpController {
   constructor(
     @Inject('IHeadquartersQueryPort')
     private readonly headquartersQueryPort: IHeadquartersQueryPort,
+    @InjectRepository(HeadquartersOrmEntity)
+    private readonly sedeRepo: Repository<HeadquartersOrmEntity>
   ) {}
 
   @MessagePattern('get_sede_by_id')
@@ -46,5 +52,21 @@ export class SedeTcpController {
         nombre: sedeDto.nombre,
       },
     };
+  }
+  @MessagePattern('get_sedes_nombres')
+  async getNamesByIds(
+    @Payload() ids: number[],
+  ): Promise<Record<number, string>> {
+    if (!ids || ids.length === 0) return {};
+
+    const sedes = await this.sedeRepo.find({
+      where: { id_sede: In(ids) },
+      select: ['id_sede', 'nombre'],
+    });
+
+    return sedes.reduce((acc, sede) => {
+      acc[sede.id_sede] = sede.nombre;
+      return acc;
+    }, {});
   }
 }

@@ -17,9 +17,22 @@ import { InventoryCountCommandService } from './application/service/count/invent
 import { InventoryCountQueryService } from './application/service/count/inventory-count-query.service';
 import { InventoryQueryService } from './application/service/inventory/inventory-query.service';
 import { SedeOrmEntity } from '../../catalog/product/infrastructure/entity/sede-orm.entity';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ProductOrmEntity } from '../../catalog/product/infrastructure/entity/product-orm.entity';
+import { CategoryOrmEntity } from '../../catalog/product/infrastructure/entity/category-orm.entity';
 
 @Module({
   imports: [
+    ClientsModule.register([
+      {
+        name: 'ADMIN_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: '127.0.0.1',
+          port: 3011,
+        },
+      },
+    ]),
     TypeOrmModule.forFeature([
       InventoryMovementOrmEntity,
       InventoryMovementDetailOrmEntity,
@@ -28,6 +41,8 @@ import { SedeOrmEntity } from '../../catalog/product/infrastructure/entity/sede-
       StockOrmEntity,
       WarehouseOrmEntity,
       SedeOrmEntity,
+      ProductOrmEntity,
+      CategoryOrmEntity,
     ]),
   ],
   controllers: [InventoryMovementRestController, InventoryCountController],
