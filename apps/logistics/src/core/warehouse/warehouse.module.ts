@@ -5,7 +5,7 @@ import { WarehouseRestController } from './infrastructure/adapters/in/controller
 import { WarehouseQueryService } from './application/service/warehouse-query.service';
 import { WarehouseCommandService } from './application/service/warehouse-command.service';
 import { WarehouseTypeormRepository } from './infrastructure/adapters/out/repository/warehouse.repository';
-import { IWarehouseRepository } from './domain/ports/out/warehouse-ports-out'; 
+import { IWarehouseRepository } from './domain/ports/out/warehouse-ports-out';
 
 @Module({
   imports: [TypeOrmModule.forFeature([WarehouseOrmEntity])],
@@ -15,7 +15,7 @@ import { IWarehouseRepository } from './domain/ports/out/warehouse-ports-out';
     WarehouseCommandService,
     WarehouseTypeormRepository,
     {
-      provide: IWarehouseRepository,       
+      provide: IWarehouseRepository,
       useClass: WarehouseTypeormRepository,
     },
   ],

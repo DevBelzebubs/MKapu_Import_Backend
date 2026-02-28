@@ -227,7 +227,9 @@ export class ProductQueryService implements IProductQueryPort {
     try {
       const sedeInfo = await this.sedeTcpProxy.getSedeById(String(dto.id_sede));
       if (sedeInfo?.nombre) sedeName = sedeInfo.nombre;
-    } catch {}
+    } catch {
+      throw new NotFoundException(`Sede no encontrada: ${dto.id_sede}`);
+    }
 
     const [rows, total] = await this.repository.getProductsStockVentas(
       dto.id_sede,

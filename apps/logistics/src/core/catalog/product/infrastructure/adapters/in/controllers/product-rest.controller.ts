@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   Body,
   Controller,
@@ -166,7 +167,6 @@ export class ProductRestController {
       id_categoria: id_categoria ? Number(id_categoria) : undefined,
     };
 
-    // ── NUEVO: parsea page y size con defaults ───────────────────────────
     const pageNum = page ? parseInt(page, 10) : 1;
     const sizeNum = size ? parseInt(size, 10) : 10;
 
