@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { InventoryMovementOrmEntity } from './infrastructure/entity/inventory-movement-orm.entity';
@@ -20,9 +20,11 @@ import { SedeOrmEntity } from '../../catalog/product/infrastructure/entity/sede-
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ProductOrmEntity } from '../../catalog/product/infrastructure/entity/product-orm.entity';
 import { CategoryOrmEntity } from '../../catalog/product/infrastructure/entity/category-orm.entity';
+import { ProductModule } from '../../catalog/product/product.module';
 
 @Module({
   imports: [
+    forwardRef(() => ProductModule),
     ClientsModule.register([
       {
         name: 'ADMIN_SERVICE',
@@ -73,6 +75,7 @@ import { CategoryOrmEntity } from '../../catalog/product/infrastructure/entity/c
     'IInventoryCountRepository',
     InventoryCountCommandService,
     InventoryCountQueryService,
+    InventoryTypeOrmRepository,
   ],
 })
 export class InventoryModule {}

@@ -1,5 +1,3 @@
-/* apps/logistics/src/core/warehouse/inventory/domain/entity/inventory-movement.entity.ts */
-
 export type OriginType = 'TRANSFERENCIA' | 'COMPRA' | 'VENTA' | 'AJUSTE';
 export type DetailType = 'INGRESO' | 'SALIDA';
 

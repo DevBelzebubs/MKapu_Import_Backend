@@ -19,7 +19,7 @@ import {
   ProductStockVentasItemDto,
   ProductAutocompleteVentasResponseDto,
   ProductAutocompleteVentasItemDto,
-  CategoriaConStockDto
+  CategoriaConStockDto,
 } from '../dto/out';
 import { ProductMapper } from '../mapper/product.mapper';
 import { SedeTcpProxy } from '../../infrastructure/adapters/out/TCP/sede-tcp.proxy';
@@ -194,7 +194,6 @@ export class ProductQueryService implements IProductQueryPort {
     }));
   }
 
-
   async autocompleteProductsVentas(
     dto: ProductAutocompleteQueryDto,
   ): Promise<ProductAutocompleteVentasResponseDto> {
@@ -205,33 +204,31 @@ export class ProductQueryService implements IProductQueryPort {
     );
 
     const data: ProductAutocompleteVentasItemDto[] = rows.map((r) => ({
-      id_producto:     r.id_producto,
-      codigo:          r.codigo,
-      nombre:          r.nombre,
-      stock:           r.stock,
+      id_producto: r.id_producto,
+      codigo: r.codigo,
+      nombre: r.nombre,
+      stock: r.stock,
       precio_unitario: r.precio_unitario,
-      precio_caja:     r.precio_caja,
-      precio_mayor:    r.precio_mayor,
-      id_categoria:    r.id_categoria,
-      familia:         r.familia,
+      precio_caja: r.precio_caja,
+      precio_mayor: r.precio_mayor,
+      id_categoria: r.id_categoria,
+      familia: r.familia,
     }));
 
     return { data };
   }
-  
+
   async getProductsStockVentas(
     dto: ProductAutocompleteQueryDto,
     page: number = 1,
     size: number = 10,
-  ): Promise<{ data: ProductStockVentasItemDto[]; pagination: PaginationDto }> 
-  {
+  ): Promise<{ data: ProductStockVentasItemDto[]; pagination: PaginationDto }> {
     let sedeName = `Sede ${dto.id_sede}`;
     try {
       const sedeInfo = await this.sedeTcpProxy.getSedeById(String(dto.id_sede));
       if (sedeInfo?.nombre) sedeName = sedeInfo.nombre;
-    } catch 
-    {
-
+    } catch {
+      throw new NotFoundException(`Sede no encontrada: ${dto.id_sede}`);
     }
 
     const [rows, total] = await this.repository.getProductsStockVentas(
@@ -243,16 +240,16 @@ export class ProductQueryService implements IProductQueryPort {
     );
 
     const data: ProductStockVentasItemDto[] = rows.map((r) => ({
-      id_producto:     r.id_producto,
-      codigo:          r.codigo,
-      nombre:          r.nombre,
-      familia:         r.familia,
-      id_categoria:    r.id_categoria,
-      sede:            sedeName,
-      stock:           r.stock,
+      id_producto: r.id_producto,
+      codigo: r.codigo,
+      nombre: r.nombre,
+      familia: r.familia,
+      id_categoria: r.id_categoria,
+      sede: sedeName,
+      stock: r.stock,
       precio_unitario: r.precio_unitario,
-      precio_caja:     r.precio_caja,
-      precio_mayor:    r.precio_mayor,
+      precio_caja: r.precio_caja,
+      precio_mayor: r.precio_mayor,
     }));
 
     const pagination: PaginationDto = {
@@ -265,13 +262,18 @@ export class ProductQueryService implements IProductQueryPort {
     return { data, pagination };
   }
 
-  
-  async getCategoriasConStock(id_sede: number): Promise<CategoriaConStockDto[]> {
+  async getCategoriasConStock(
+    id_sede: number,
+  ): Promise<CategoriaConStockDto[]> {
     const rows = await this.repository.getCategoriaConStock(id_sede);
     return rows.map((r) => ({
-      id_categoria:    r.id_categoria,
-      nombre:          r.nombre,
+      id_categoria: r.id_categoria,
+      nombre: r.nombre,
       total_productos: r.total_productos,
     }));
+  }
+  async getAutocompleteProducts(codigo: string) {
+    if (!codigo || codigo.length < 2) return [];
+    return await this.repository.searchAutocompleteByCode(codigo);
   }
 }

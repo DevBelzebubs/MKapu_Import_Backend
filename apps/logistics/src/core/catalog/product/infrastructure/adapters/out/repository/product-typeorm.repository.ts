@@ -1,17 +1,16 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* ============================================
-   INFRASTRUCTURE LAYER - REPOSITORY
-   logistics/src/core/catalog/product/infrastructure/adapters/out/repository/product-typeorm.repository.ts
-   ============================================ */
-
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 
-
-import { IProductRepositoryPort, ProductAutocompleteVentasRaw, ProductStockVentasRaw, CategoriaConStockRaw} from '../../../../domain/ports/out/product-ports-out';
+import {
+  IProductRepositoryPort,
+  ProductAutocompleteVentasRaw,
+  ProductStockVentasRaw,
+  CategoriaConStockRaw,
+} from '../../../../domain/ports/out/product-ports-out';
 
 import { Product } from '../../../../domain/entity/product-domain-entity';
 import { ProductOrmEntity } from '../../../entity/product-orm.entity';
@@ -123,11 +122,6 @@ export class ProductTypeOrmRepository implements IProductRepositoryPort {
     const count = await this.repository.count({ where: { codigo } });
     return count > 0;
   }
-
-  // ===============================
-  // Query para Stock por Sede (paginado + filtros)
-  // ===============================
-
   async findProductsStock(
     filters: ListProductStockFilterDto,
     page: number,
@@ -253,8 +247,7 @@ export class ProductTypeOrmRepository implements IProductRepositoryPort {
     }));
   }
 
-
-    // ── NUEVO: autocomplete con precios para ventas ────────────────────────
+  // ── NUEVO: autocomplete con precios para ventas ────────────────────────
   async autocompleteProductsVentas(
     id_sede: number,
     search?: string,
@@ -306,25 +299,26 @@ export class ProductTypeOrmRepository implements IProductRepositoryPort {
     const rows = await qb.getRawMany();
 
     return rows.map((r) => ({
-      id_producto:     Number(r.id_producto),
-      codigo:          r.codigo,
-      nombre:          r.nombre,
-      id_categoria:    Number(r.id_categoria),
-      familia:         r.familia,
-      stock:           Number(r.stock),
+      id_producto: Number(r.id_producto),
+      codigo: r.codigo,
+      nombre: r.nombre,
+      id_categoria: Number(r.id_categoria),
+      familia: r.familia,
+      stock: Number(r.stock),
       precio_unitario: Number(r.precio_unitario),
-      precio_caja:     Number(r.precio_caja),
-      precio_mayor:    Number(r.precio_mayor),
+      precio_caja: Number(r.precio_caja),
+      precio_mayor: Number(r.precio_mayor),
     }));
   }
-  
+
   async getProductsStockVentas(
     id_sede: number,
-    page: number,    // ← NUEVO
-    size: number,    // ← NUEVO
+    page: number, // ← NUEVO
+    size: number, // ← NUEVO
     search?: string,
     id_categoria?: number,
-  ): Promise<[ProductStockVentasRaw[], number]> {  // ← NUEVO: tuple con total
+  ): Promise<[ProductStockVentasRaw[], number]> {
+    // ← NUEVO: tuple con total
     const qb = this.stockRepository
       .createQueryBuilder('stock')
       .innerJoin('stock.producto', 'producto')
@@ -378,15 +372,15 @@ export class ProductTypeOrmRepository implements IProductRepositoryPort {
     const rows = await qb.getRawMany();
 
     const data = rows.map((r) => ({
-      id_producto:     Number(r.id_producto),
-      codigo:          r.codigo,
-      nombre:          r.nombre,
-      familia:         r.familia,
-      id_categoria:    Number(r.id_categoria),
-      stock:           Number(r.stock),
+      id_producto: Number(r.id_producto),
+      codigo: r.codigo,
+      nombre: r.nombre,
+      familia: r.familia,
+      id_categoria: Number(r.id_categoria),
+      stock: Number(r.stock),
       precio_unitario: Number(r.precio_unitario),
-      precio_caja:     Number(r.precio_caja),
-      precio_mayor:    Number(r.precio_mayor),
+      precio_caja: Number(r.precio_caja),
+      precio_mayor: Number(r.precio_mayor),
     }));
 
     return [data, total];
@@ -411,9 +405,28 @@ export class ProductTypeOrmRepository implements IProductRepositoryPort {
       .getRawMany();
 
     return rows.map((r) => ({
-      id_categoria:    Number(r.id_categoria),
-      nombre:          r.nombre,
+      id_categoria: Number(r.id_categoria),
+      nombre: r.nombre,
       total_productos: Number(r.total_productos),
     }));
+  }
+  async searchAutocompleteByCode(codigo: string): Promise<any[]> {
+    const result = await this.repository
+      .createQueryBuilder('p')
+      .select([
+        'p.id_producto AS id_producto',
+        'p.codigo AS codigo',
+        'p.descripcion AS descripcion',
+        'p.pre_venta AS pre_venta',
+        'COALESCE(SUM(s.cantidad), 0) AS stock',
+      ])
+      .leftJoin(StockOrmEntity, 's', 's.id_producto = p.id_producto')
+      .where('p.codigo LIKE :codigo', { codigo: `%${codigo}%` })
+      .andWhere('p.estado = :estado', { estado: true })
+      .groupBy('p.id_producto')
+      .limit(10)
+      .getRawMany();
+
+    return result;
   }
 }

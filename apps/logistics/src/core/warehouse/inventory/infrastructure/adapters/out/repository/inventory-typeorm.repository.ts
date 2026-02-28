@@ -30,7 +30,6 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
       refTable: movement.refTable,
       observation: movement.observation,
       date: movement.date,
-      // Usamos los IDs primitivos directamente. TypeORM se encarga del movementId por el cascade.
       details: movement.items.map((item) => ({
         productId: item.productId,
         warehouseId: item.warehouseId,
@@ -80,22 +79,44 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
         'prod.descripcion',
         'prod.uni_med',
       ])
-      // ASEGÚRATE DE QUE ESTA LÍNEA DIGA warehouseRelation
       .leftJoinAndSelect('det.warehouseRelation', 'wh')
       .orderBy('mov.date', 'DESC');
 
-    // ... (El bloque de filtros se mantiene igual)
+    if (filters.search) {
+      query.andWhere(
+        '(mov.observation LIKE :search OR mov.refTable LIKE :search)',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    if (filters.tipoId && filters.tipoId > 0) {
+      if (filters.tipoId == 1) {
+        query.andWhere('det.type = :type', { type: 'INGRESO' });
+      } else if (filters.tipoId == 2) {
+        query.andWhere('det.type = :type', { type: 'SALIDA' });
+      } else if (filters.tipoId == 3) {
+        query.andWhere('mov.originType = :otype', { otype: 'TRANSFERENCIA' });
+      }
+    }
+
+    if (filters.fechaInicio && filters.fechaFin) {
+      query.andWhere('mov.date BETWEEN :inicio AND :fin', {
+        inicio: filters.fechaInicio,
+        fin: filters.fechaFin,
+      });
+    }
 
     const [movements, total] = await query.getManyAndCount();
     const sedeIds = new Set<number>();
 
     movements.forEach((mov) => {
       mov.details.forEach((det) => {
-        // ACTUALIZADO: Buscamos en warehouseRelation
-        const id =
-          det.warehouseRelation?.['id_sede'] ||
-          det.warehouseRelation?.['sedeId'];
-        if (id) sedeIds.add(Number(id));
+        const rawId =
+          det.warehouseRelation?.sedeId ??
+          (det.warehouseRelation as any)?.id_sede;
+        if (rawId !== undefined && rawId !== null) {
+          sedeIds.add(Number(rawId));
+        }
       });
     });
 
@@ -106,7 +127,7 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
           this.adminClient.send('get_sedes_nombres', Array.from(sedeIds)),
         );
       } catch (error) {
-        console.error('3. ERROR CRÍTICO TCP:', error.message);
+        console.error('TCP Error:', error.message);
       }
     }
 
@@ -114,14 +135,13 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
       const detalleSalida = mov.details.find((d) => d.type === 'SALIDA');
       const detalleIngreso = mov.details.find((d) => d.type === 'INGRESO');
 
-      // Extraemos el nombre del almacén (probamos 'nombre' y 'descripcion' por si acaso)
       const whSalidaNombre =
-        detalleSalida?.warehouseRelation?.['nombre'] ||
-        detalleSalida?.warehouseRelation?.['descripcion'];
+        detalleSalida?.warehouseRelation?.nombre ||
+        (detalleSalida?.warehouseRelation as any)?.descripcion;
 
       const whIngresoNombre =
-        detalleIngreso?.warehouseRelation?.['nombre'] ||
-        detalleIngreso?.warehouseRelation?.['descripcion'];
+        detalleIngreso?.warehouseRelation?.nombre ||
+        (detalleIngreso?.warehouseRelation as any)?.descripcion;
 
       let origenNombre = 'N/A';
       let destinoNombre = 'N/A';
@@ -145,24 +165,23 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
           break;
       }
 
-      // Resolvemos el ID involucrado para la Sede
       const idSedeInvolucrada =
-        detalleSalida?.warehouseRelation?.['id_sede'] ||
-        detalleSalida?.warehouseRelation?.['sedeId'] ||
-        detalleIngreso?.warehouseRelation?.['id_sede'] ||
-        detalleIngreso?.warehouseRelation?.['sedeId'];
+        detalleSalida?.warehouseRelation?.sedeId ??
+        (detalleSalida?.warehouseRelation as any)?.id_sede ??
+        detalleIngreso?.warehouseRelation?.sedeId ??
+        (detalleIngreso?.warehouseRelation as any)?.id_sede;
 
-      const sedeNombre = idSedeInvolucrada
-        ? sedeMap[idSedeInvolucrada] ||
-          sedeMap[idSedeInvolucrada.toString()] ||
-          'Sede No Encontrada'
-        : 'Sin Sede';
+      const sedeNombre =
+        idSedeInvolucrada !== undefined && idSedeInvolucrada !== null
+          ? sedeMap[idSedeInvolucrada] ||
+            sedeMap[idSedeInvolucrada.toString()] ||
+            'Sede No Encontrada'
+          : 'Sin Sede';
 
       const detallesUnicos = [];
       const mapProductos = new Map();
 
       mov.details.forEach((det) => {
-        // Extraemos usando productRelation
         const idDelProducto = det.productRelation?.id_producto || det.productId;
 
         if (idDelProducto && !mapProductos.has(idDelProducto)) {
@@ -177,7 +196,7 @@ export class InventoryTypeOrmRepository implements IInventoryRepositoryPort {
             productoNombre:
               det.productRelation?.descripcion ||
               det.productRelation?.codigo ||
-              `ID: ${idDelProducto} (Sin nombre)`,
+              `ID: ${idDelProducto}`,
             cantidad: det.quantity,
             unidadMedida: det.productRelation?.uni_med || 'UND',
             tipoOperacionItem: det.type,

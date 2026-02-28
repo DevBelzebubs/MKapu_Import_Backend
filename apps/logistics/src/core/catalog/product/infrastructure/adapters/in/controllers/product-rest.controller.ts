@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   Body,
   Controller,
@@ -148,14 +149,13 @@ export class ProductRestController {
     return this.queryService.autocompleteProductsVentas(dto);
   }
 
-
   @Get('ventas/stock')
   async stockVentas(
     @Query('id_sede') id_sede?: string,
     @Query('search') search?: string,
     @Query('id_categoria') id_categoria?: string,
-    @Query('page') page?: string,      // ← NUEVO
-    @Query('size') size?: string,      // ← NUEVO
+    @Query('page') page?: string, // ← NUEVO
+    @Query('size') size?: string, // ← NUEVO
   ) {
     if (!id_sede || Number.isNaN(Number(id_sede))) {
       throw new BadRequestException('id_sede es obligatorio. Ej: ?id_sede=1');
@@ -167,7 +167,6 @@ export class ProductRestController {
       id_categoria: id_categoria ? Number(id_categoria) : undefined,
     };
 
-    // ── NUEVO: parsea page y size con defaults ───────────────────────────
     const pageNum = page ? parseInt(page, 10) : 1;
     const sizeNum = size ? parseInt(size, 10) : 10;
 
