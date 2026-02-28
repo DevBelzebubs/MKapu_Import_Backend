@@ -16,6 +16,7 @@ import { ReportsController } from './infrastructure/adapters/in/controllers/repo
       provide: 'IReportsRepositoryPort',
       useClass: ReportsTypeOrmRepository,
     },
+    { provide: 'IReportsUseCase', useClass: ReportsService },
   ],
   exports: ['ReportsService'],
 })

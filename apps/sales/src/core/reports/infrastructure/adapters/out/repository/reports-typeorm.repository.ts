@@ -7,12 +7,19 @@ import { Injectable } from '@nestjs/common';
 import { IReportsRepositoryPort } from '../../../../domain/ports/out/reports-repository.port';
 import { GetSalesReportDto } from '../../../../application/dto/in/get-sales-report.dto';
 import { SalesReportRow } from '../../../../domain/entity/sales-report-row.entity';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CustomerOrmEntity } from 'apps/sales/src/core/customer/infrastructure/entity/customer-orm.entity';
+import { SalesReceiptOrmEntity } from 'apps/sales/src/core/sales-receipt/infrastructure/entity/sales-receipt-orm.entity';
 
 @Injectable()
 export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
   constructor(
-    private readonly dataSource: DataSource, // Replace with actual TypeORM repository
+    private readonly dataSource: DataSource,
+    @InjectRepository(SalesReceiptOrmEntity)
+    private readonly salesReceiptRepository: Repository<SalesReceiptOrmEntity>,
+    @InjectRepository(CustomerOrmEntity)
+    private readonly customerRepository: Repository<CustomerOrmEntity>,
   ) {}
   async getSalesDashboard(
     filters: GetSalesReportDto,
@@ -73,5 +80,75 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
           row.vendedor_nombre,
         ),
     );
+  }
+  async getKpisData(
+    startDate: Date,
+    endDate: Date,
+    id_sede?: string,
+  ): Promise<{ totalVentas: number; totalOrdenes: number }> {
+    const query = this.salesReceiptRepository
+      .createQueryBuilder('sr')
+      .select('SUM(sr.total)', 'totalVentas')
+      .addSelect('COUNT(sr.id)', 'totalOrdenes')
+      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('sr.estado = :estado', { estado: true });
+
+    if (id_sede) {
+      query.andWhere('sr.id_sede = :id_sede', { id_sede });
+    }
+
+    const result = await query.getRawOne();
+    return {
+      totalVentas: parseFloat(result.totalVentas || 0),
+      totalOrdenes: parseInt(result.totalOrdenes || 0),
+    };
+  }
+
+  async getTotalClientes(startDate: Date, endDate: Date): Promise<number> {
+    return await this.customerRepository
+      .createQueryBuilder('c')
+      .where('c.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .getCount();
+  }
+  async getSalesChartData(startDate: Date, endDate: Date): Promise<any[]> {
+    return await this.salesReceiptRepository
+      .createQueryBuilder('sr')
+      .select('DATE(sr.fec_emision)', 'fecha')
+      .addSelect('SUM(sr.total)', 'total')
+      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('sr.estado = :estado', { estado: true })
+      .groupBy('DATE(sr.fec_emision)')
+      .orderBy('fecha', 'ASC')
+      .getRawMany();
+  }
+  async getTopProductsData(
+    startDate: Date,
+    endDate: Date,
+    limit: number = 5,
+  ): Promise<any[]> {
+    return await this.salesReceiptRepository
+      .createQueryBuilder('sr')
+      .innerJoin('sr.detalles', 'detail')
+      .select('detail.descripcion', 'nombre')
+      .addSelect('SUM(detail.cantidad)', 'ventas')
+      .addSelect('SUM(detail.cantidad * detail.pre_uni)', 'ingresos')
+      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('sr.estado = :estado', { estado: true })
+      .groupBy('detail.descripcion')
+      .orderBy('ingresos', 'DESC')
+      .limit(limit)
+      .getRawMany();
   }
 }
