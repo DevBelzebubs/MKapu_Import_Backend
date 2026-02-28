@@ -69,9 +69,7 @@ export class SedeTcpController {
       return acc;
     }, {});
   }
-}
-
-  @MessagePattern('get_sede_by_id_full')
+   @MessagePattern('get_sede_by_id_full')
 async getSedeByIdFull(@Payload() payload: GetSedeByIdPayload) {
   const idStr = String(payload?.id_sede ?? '').trim();
 
@@ -100,3 +98,5 @@ async getSedeByIdFull(@Payload() payload: GetSedeByIdPayload) {
   };
 }
 }
+
+

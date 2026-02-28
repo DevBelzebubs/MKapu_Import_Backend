@@ -17,8 +17,6 @@ import {
   ProductAutocompleteItemDto,
   ProductDetailWithStockResponseDto,
   ProductStockVentasItemDto,
-  ProductAutocompleteVentasResponseDto,
-  ProductAutocompleteVentasItemDto,
   CategoriaConStockDto,
 } from '../dto/out';
 import { ProductMapper } from '../mapper/product.mapper';
@@ -194,28 +192,9 @@ export class ProductQueryService implements IProductQueryPort {
     }));
   }
 
-  async autocompleteProductsVentas(
-    dto: ProductAutocompleteQueryDto,
-  ): Promise<ProductAutocompleteVentasResponseDto> {
-    const rows = await this.repository.autocompleteProductsVentas(
-      dto.id_sede,
-      dto.search,
-      dto.id_categoria,
-    );
-
-    const data: ProductAutocompleteVentasItemDto[] = rows.map((r) => ({
-      id_producto: r.id_producto,
-      codigo: r.codigo,
-      nombre: r.nombre,
-      stock: r.stock,
-      precio_unitario: r.precio_unitario,
-      precio_caja: r.precio_caja,
-      precio_mayor: r.precio_mayor,
-      id_categoria: r.id_categoria,
-      familia: r.familia,
-    }));
-
-    return { data };
+  async getAutocompleteProducts(codigo: string) {
+    if (!codigo || codigo.length < 2) return [];
+    return await this.repository.searchAutocompleteByCode(codigo);
   }
 
   async getProductsStockVentas(

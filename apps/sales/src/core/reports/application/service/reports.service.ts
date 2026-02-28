@@ -20,10 +20,18 @@ export class ReportsService implements IReportsUseCase {
     private readonly reportsRepository: IReportsRepositoryPort,
     @InjectRepository(SalesReceiptOrmEntity)
     private readonly salesReceiptRepository: Repository<SalesReceiptOrmEntity>,
-
     @InjectRepository(CustomerOrmEntity)
     private readonly customerRepository: Repository<CustomerOrmEntity>,
   ) {}
+  async getRecentSales(filters: GetDashboardFilterDto) {
+    const { startDate, endDate } = this.calculateDates(filters.periodo);
+
+    // Convertimos los objetos Date a string (formato ISO 8601) para que el DTO no lance error
+    return await this.reportsRepository.getSalesDashboard({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
+  }
   async generateSalesReport(
     filters: GetSalesReportDto,
   ): Promise<SalesReportRow[]> {
@@ -191,33 +199,30 @@ export class ReportsService implements IReportsUseCase {
     }));
   }
   async getTopSellers(filters: GetDashboardFilterDto) {
+    // 1. Calculamos las fechas aquí (Lógica de negocio)
     const { startDate, endDate } = this.calculateDates(filters.periodo);
 
+    // 2. Llamamos al repositorio
     const rawData = await this.reportsRepository.getTopSellersData(
       startDate,
       endDate,
       5,
     );
 
-    const sedesMap: { [key: string]: string } = {
-      SEDE001: 'Las Flores',
-      SEDE002: 'Lurín',
-      SEDE003: 'VES',
-    };
-
+    // 3. Mapeamos y formateamos la data para Angular
     return rawData.map((item) => {
-      const montoTotal = parseFloat(item.montoTotal || '0');
-      const totalVentas = parseInt(item.totalVentas || '0', 10);
-      const ticketPromedio = totalVentas > 0 ? montoTotal / totalVentas : 0;
+      const monto = parseFloat(item.montoTotal || '0');
+      const ventas = parseInt(item.totalVentas || '0', 10);
 
       return {
-        nombre: item.id_empleado
-          ? `Vendedor ${item.id_empleado.slice(-4)}`
-          : 'Vendedor General',
-        totalVentas: totalVentas,
-        montoTotal: `S/ ${montoTotal.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`,
-        ticketPromedio: `S/ ${ticketPromedio.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`,
-        sede: sedesMap[item.sede] || item.sede || 'Sin Sede',
+        // Unimos los 3 campos de nombre
+        nombre: `${item.nombres} ${item.ape_pat} ${item.ape_mat}`.trim(),
+        totalVentas: ventas,
+        montoTotal: `S/ ${monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`,
+        ticketPromedio: `S/ ${(ventas > 0 ? monto / ventas : 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`,
+        sede: item.nombre_sede || 'Sede Central',
+        // Como no hay foto en la DB, enviamos null para que el front use la inicial
+        foto: null,
       };
     });
   }

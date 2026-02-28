@@ -146,7 +146,7 @@ export class ProductRestController {
       id_categoria: id_categoria ? Number(id_categoria) : undefined,
     };
 
-    return this.queryService.autocompleteProductsVentas(dto);
+    return this.queryService.autocompleteProducts(dto);
   }
 
   @Get('ventas/stock')

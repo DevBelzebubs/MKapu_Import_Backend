@@ -22,4 +22,5 @@ export interface IReportsUseCase {
     filters: GetDashboardFilterDto,
   ): Promise<{ labels: string[]; values: number[] }>;
   getSalesByHeadquarters(filters: GetDashboardFilterDto);
+  getRecentSales(filters: GetDashboardFilterDto): Promise<any[]>;
 }

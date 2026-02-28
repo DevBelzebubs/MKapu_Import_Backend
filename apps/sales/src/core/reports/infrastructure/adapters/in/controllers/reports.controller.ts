@@ -8,15 +8,13 @@ import { GetDashboardFilterDto } from 'apps/sales/src/core/reports/application/d
 @Controller('reports')
 export class ReportsController {
   constructor(
-    @Inject('ReportsService')
-    private readonly reportsService: IReportsUseCase,
     @Inject('IReportsUseCase')
     private readonly reportsUseCase: IReportsUseCase,
   ) {}
 
   @Get('sales-dashboard')
   async getSalesDashboard(@Query() filters: GetSalesReportDto) {
-    return await this.reportsService.generateSalesReport(filters);
+    return await this.reportsUseCase.generateSalesReport(filters);
   }
   @Get('dashboard/kpis')
   async getKpis(@Query() filters: GetDashboardFilterDto) {
@@ -49,5 +47,9 @@ export class ReportsController {
   @Get('dashboard/sales-by-headquarter')
   async getSalesByHeadquarters(@Query() filters: GetDashboardFilterDto) {
     return await this.reportsUseCase.getSalesByHeadquarters(filters);
+  }
+  @Get('dashboard/recent-sales')
+  async getRecentSales(@Query() filters: GetDashboardFilterDto) {
+    return await this.reportsUseCase.getRecentSales(filters);
   }
 }
