@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
@@ -228,7 +227,6 @@ export class ReportsService implements IReportsUseCase {
   }
   async getPaymentMethods(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);
-
     const rawData = await this.reportsRepository.getPaymentMethodsData(
       startDate,
       endDate,
@@ -238,7 +236,9 @@ export class ReportsService implements IReportsUseCase {
     const values: number[] = [];
 
     rawData.forEach((item) => {
-      labels.push(item.metodo || 'No Definido');
+      const nombreMetodo = item.metodo || item.tipo_descripcion || 'Otros';
+
+      labels.push(nombreMetodo);
       values.push(parseFloat(item.total || '0'));
     });
 

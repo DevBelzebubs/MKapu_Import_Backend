@@ -84,22 +84,15 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
         'tipo',
         'tipo.id_tipo_pago = pago.id_tipo_pago',
       )
-
-      // 🚀 CAMBIO AQUÍ: Cambiamos 'tipo.nombre' por 'tipo.descripcion'
-      // Si revisas tu tabla tipo_pago y ves que la columna de texto se llama distinto
-      // (por ejemplo: 'metodo_pago'), entonces pon 'tipo.metodo_pago'
+      // Forzamos el alias 'metodo'
       .select('tipo.descripcion', 'metodo')
-
       .addSelect('SUM(pago.monto)', 'total')
       .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
       })
       .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO })
-
-      // 🚀 CAMBIO AQUÍ TAMBIÉN: Debe coincidir con el select de arriba
       .groupBy('tipo.descripcion')
-
       .getRawMany();
   }
 
@@ -234,11 +227,6 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     endDate: Date,
     limit: number = 5,
   ): Promise<any[]> {
-    // 💡 SOLUCIÓN SQL NATIVA
-    // Bypassea los bugs de TypeORM al cruzar bases de datos en Microservicios
-    // ⚠️ Importante: Verifica si tu tabla de detalles se llama 'detalle_comprobante',
-    // si se llama distinto (ej. 'comprobante_detalle'), cámbialo en el JOIN.
-
     const rawQuery = `
       SELECT 
         c.nombre AS categoria, 
