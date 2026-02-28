@@ -272,8 +272,18 @@ export class ProductQueryService implements IProductQueryPort {
       total_productos: r.total_productos,
     }));
   }
-  async getAutocompleteProducts(codigo: string) {
-    if (!codigo || codigo.length < 2) return [];
-    return await this.repository.searchAutocompleteByCode(codigo);
+
+  async getProductsCodigoByIds(
+    ids: number[],
+  ): Promise<{ id_producto: number; codigo: string }[]> {
+    if (!ids || ids.length === 0) return [];
+    const products = await this.productRepo.find({
+      where: { id_producto: In(ids) },
+      select: ['id_producto', 'codigo'],
+    });
+    return products.map((p) => ({
+      id_producto: p.id_producto,
+      codigo: p.codigo,
+    }));
   }
 }
