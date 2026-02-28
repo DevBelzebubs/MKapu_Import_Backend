@@ -236,13 +236,20 @@ export class ReportsService implements IReportsUseCase {
     const values: number[] = [];
 
     rawData.forEach((item) => {
-      const nombreMetodo = item.metodo || item.tipo_descripcion || 'Otros';
+      // 🚀 DEFENSA TOTAL: Buscamos el valor en todas las variantes posibles que TypeORM genera
+      const label =
+        item.metodo || item.tipo_descripcion || item.descripcion || 'Otro';
+      const valor = parseFloat(item.total || item.SUM || '0');
 
-      labels.push(nombreMetodo);
-      values.push(parseFloat(item.total || '0'));
+      labels.push(label);
+      values.push(valor);
     });
 
-    return { labels, values };
+    // Si no hay datos, enviamos un array vacío coherente
+    return {
+      labels: labels.length > 0 ? labels : ['Sin datos'],
+      values: values.length > 0 ? values : [0],
+    };
   }
   async getSalesByDistrict(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);

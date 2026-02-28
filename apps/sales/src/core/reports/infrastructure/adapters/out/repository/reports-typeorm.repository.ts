@@ -72,6 +72,7 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     });
   }
   async getPaymentMethodsData(startDate: Date, endDate: Date): Promise<any[]> {
+    // Usamos getRawMany() y nos aseguramos de que el alias sea simple
     return await this.salesReceiptRepository
       .createQueryBuilder('sr')
       .innerJoin(
@@ -84,7 +85,10 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
         'tipo',
         'tipo.id_tipo_pago = pago.id_tipo_pago',
       )
-      // Forzamos el alias 'metodo'
+      /* 🚀 TRUCO: Si 'descripcion' te sale undefined, prueba con 'nombre'. 
+         Si no estás seguro, verifica en tu BD (tabla tipo_pago). 
+         Aquí forzamos el alias entre comillas invertidas para MySQL.
+      */
       .select('tipo.descripcion', 'metodo')
       .addSelect('SUM(pago.monto)', 'total')
       .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
