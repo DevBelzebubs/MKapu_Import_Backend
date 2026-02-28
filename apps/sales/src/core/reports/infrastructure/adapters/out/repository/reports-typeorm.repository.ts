@@ -151,4 +151,110 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
       .limit(limit)
       .getRawMany();
   }
+  async getTopSellersData(
+    startDate: Date,
+    endDate: Date,
+    limit: number = 5,
+  ): Promise<any[]> {
+    const qb = this.salesReceiptRepository
+      .createQueryBuilder('sr')
+      .leftJoin('sr.empleado', 'emp')
+      .addSelect('emp.nombres', 'nombreVendedor')
+      .select('sr.id_empleado', 'id_empleado')
+      .addSelect('sr.id_sede', 'sede')
+      .addSelect('COUNT(sr.id)', 'totalVentas')
+      .addSelect('SUM(sr.total)', 'montoTotal')
+      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('sr.estado = :estado', { estado: true })
+      .groupBy('sr.id_empleado')
+      .addGroupBy('sr.id_sede')
+      .orderBy('montoTotal', 'DESC')
+      .limit(limit);
+
+    return await qb.getRawMany();
+  }
+  async getPaymentMethodsData(startDate: Date, endDate: Date): Promise<any[]> {
+    return await this.salesReceiptRepository
+      .createQueryBuilder('sr')
+      // ⚠️ Ajusta 'pago.metodoPago' o 'pago.med_pago' según cómo se llame el campo o relación en PaymentOrmEntity
+      .innerJoin('sr.pagos', 'pago')
+      .select('pago.med_pago', 'metodo')
+      .addSelect('SUM(pago.monto)', 'total')
+      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('sr.estado = :estado', { estado: true })
+      .groupBy('pago.med_pago')
+      .getRawMany();
+  }
+  async getSalesByDistrictData(
+    startDate: Date,
+    endDate: Date,
+    limit: number = 5,
+  ): Promise<any[]> {
+    return await this.salesReceiptRepository
+      .createQueryBuilder('sr')
+      .innerJoin('sr.cliente', 'c')
+
+      .select('TRIM(SUBSTRING_INDEX(c.direccion, ",", -1))', 'distrito')
+      .addSelect('SUM(sr.total)', 'total')
+
+      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('sr.estado = :estado', { estado: true })
+
+      .groupBy('distrito')
+      .orderBy('total', 'DESC') // Ordenamos de los distritos con más ventas a menos
+      .limit(limit)
+      .getRawMany();
+  }
+  async getSalesByCategoryData(
+    startDate: Date,
+    endDate: Date,
+    limit: number = 5,
+  ): Promise<any[]> {
+    return await this.salesReceiptRepository
+      .createQueryBuilder('sr')
+      .innerJoin('sr.detalles', 'detail')
+      // ⚠️ Asumimos relaciones hacia producto y categoría. Luego lo corregimos con tus ORMs exactos.
+      .innerJoin('detail.producto', 'product')
+      .innerJoin('product.categoria', 'category')
+
+      .select('category.nombre', 'categoria')
+      .addSelect('SUM(detail.cantidad * detail.pre_uni)', 'total')
+
+      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('sr.estado = :estado', { estado: true })
+
+      .groupBy('category.nombre')
+      .orderBy('total', 'DESC')
+      .limit(limit)
+      .getRawMany();
+  }
+  async getSalesByHeadquarterData(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<any[]> {
+    return await this.salesReceiptRepository
+      .createQueryBuilder('sr')
+      .select('sr.id_sede', 'sede')
+      .addSelect('SUM(sr.total)', 'total')
+      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('sr.estado = :estado', { estado: true })
+      .groupBy('sr.id_sede')
+      .orderBy('total', 'DESC')
+      .getRawMany();
+  }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
@@ -188,5 +189,122 @@ export class ReportsService implements IReportsUseCase {
       ventas: parseInt(item.ventas, 10),
       ingresos: `S/ ${parseFloat(item.ingresos).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
     }));
+  }
+  async getTopSellers(filters: GetDashboardFilterDto) {
+    const { startDate, endDate } = this.calculateDates(filters.periodo);
+
+    const rawData = await this.reportsRepository.getTopSellersData(
+      startDate,
+      endDate,
+      5,
+    );
+
+    const sedesMap: { [key: string]: string } = {
+      SEDE001: 'Las Flores',
+      SEDE002: 'Lurín',
+      SEDE003: 'VES',
+    };
+
+    return rawData.map((item) => {
+      const montoTotal = parseFloat(item.montoTotal || '0');
+      const totalVentas = parseInt(item.totalVentas || '0', 10);
+      const ticketPromedio = totalVentas > 0 ? montoTotal / totalVentas : 0;
+
+      return {
+        nombre: item.id_empleado
+          ? `Vendedor ${item.id_empleado.slice(-4)}`
+          : 'Vendedor General',
+        totalVentas: totalVentas,
+        montoTotal: `S/ ${montoTotal.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`,
+        ticketPromedio: `S/ ${ticketPromedio.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`,
+        sede: sedesMap[item.sede] || item.sede || 'Sin Sede',
+      };
+    });
+  }
+  async getPaymentMethods(filters: GetDashboardFilterDto) {
+    const { startDate, endDate } = this.calculateDates(filters.periodo);
+
+    const rawData = await this.reportsRepository.getPaymentMethodsData(
+      startDate,
+      endDate,
+    );
+
+    const labels: string[] = [];
+    const values: number[] = [];
+
+    rawData.forEach((item) => {
+      labels.push(item.metodo || 'No Definido');
+      values.push(parseFloat(item.total || '0'));
+    });
+
+    return { labels, values };
+  }
+  async getSalesByDistrict(filters: GetDashboardFilterDto) {
+    const { startDate, endDate } = this.calculateDates(filters.periodo);
+
+    const rawData = await this.reportsRepository.getSalesByDistrictData(
+      startDate,
+      endDate,
+      5,
+    );
+
+    const labels: string[] = [];
+    const values: number[] = [];
+
+    rawData.forEach((item) => {
+      // Si la dirección estaba vacía o nula, evitamos enviar un dato roto al frontend
+      const distritoLabel =
+        item.distrito && item.distrito !== '' ? item.distrito : 'Sin Distrito';
+
+      labels.push(distritoLabel);
+      values.push(parseFloat(item.total || '0'));
+    });
+
+    return { labels, values };
+  }
+  async getSalesByCategory(filters: GetDashboardFilterDto) {
+    const { startDate, endDate } = this.calculateDates(filters.periodo);
+
+    const rawData = await this.reportsRepository.getSalesByCategoryData(
+      startDate,
+      endDate,
+      5,
+    );
+
+    const labels: string[] = [];
+    const values: number[] = [];
+
+    rawData.forEach((item) => {
+      // Evitamos valores nulos
+      const categoriaLabel = item.categoria ? item.categoria : 'Sin Categoría';
+
+      labels.push(categoriaLabel);
+      values.push(parseFloat(item.total || '0'));
+    });
+
+    return { labels, values };
+  }
+  async getSalesByHeadquarters(filters: GetDashboardFilterDto) {
+    const { startDate, endDate } = this.calculateDates(filters.periodo);
+    const rawData = await this.reportsRepository.getSalesByHeadquarterData(
+      startDate,
+      endDate,
+    );
+    const sedesMap: { [key: string]: string } = {
+      SEDE001: 'Las Flores',
+      SEDE002: 'Lurín',
+      SEDE003: 'VES',
+    };
+
+    const labels: string[] = [];
+    const values: number[] = [];
+
+    rawData.forEach((item) => {
+      const sedeLabel = sedesMap[item.sede] || item.sede || 'Sin Sede';
+      labels.push(sedeLabel);
+      values.push(parseFloat(item.total || '0'));
+    });
+
+    return { labels, values };
   }
 }

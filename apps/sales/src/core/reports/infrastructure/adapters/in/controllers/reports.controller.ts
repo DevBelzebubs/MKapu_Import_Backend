@@ -32,6 +32,22 @@ export class ReportsController {
   }
   @Get('dashboard/top-sellers')
   async getTopSellers(@Query() filters: GetDashboardFilterDto) {
-    // GROUP BY employee_id
+    return await this.reportsUseCase.getTopSellers(filters);
+  }
+  @Get('dashboard/payment-methods')
+  async getPaymentMethods(@Query() filters: GetDashboardFilterDto) {
+    return await this.reportsUseCase.getPaymentMethods(filters);
+  }
+  @Get('dashboard/sales-by-district')
+  async getSalesByDistrict(@Query() filters: GetDashboardFilterDto) {
+    return await this.reportsUseCase.getSalesByDistrict(filters);
+  }
+  @Get('dashboard/sales-by-category')
+  async getSalesByCategory(@Query() filters: GetDashboardFilterDto) {
+    return await this.reportsUseCase.getSalesByCategory(filters);
+  }
+  @Get('dashboard/sales-by-headquarter')
+  async getSalesByHeadquarters(@Query() filters: GetDashboardFilterDto) {
+    return await this.reportsUseCase.getSalesByHeadquarters(filters);
   }
 }

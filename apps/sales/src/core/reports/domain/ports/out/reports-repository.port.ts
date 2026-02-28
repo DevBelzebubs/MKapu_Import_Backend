@@ -15,4 +15,21 @@ export interface IReportsRepositoryPort {
     endDate: Date,
     limit?: number,
   ): Promise<any[]>;
+  getTopSellersData(
+    startDate: Date,
+    endDate: Date,
+    limit?: number,
+  ): Promise<any[]>;
+  getPaymentMethodsData(startDate: Date, endDate: Date): Promise<any[]>;
+  getSalesByDistrictData(
+    startDate: Date,
+    endDate: Date,
+    limit?: number,
+  ): Promise<any[]>;
+  getSalesByCategoryData(
+    startDate: Date,
+    endDate: Date,
+    limit?: number,
+  ): Promise<any[]>;
+  getSalesByHeadquarterData(startDate: Date, endDate: Date): Promise<any[]>;
 }

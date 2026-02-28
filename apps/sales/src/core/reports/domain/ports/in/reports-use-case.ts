@@ -11,4 +11,15 @@ export interface IReportsUseCase {
     filters: GetDashboardFilterDto,
   ): Promise<{ labels: string[]; values: number[] }>;
   getTopProducts(filters: GetDashboardFilterDto): Promise<any[]>;
+  getTopSellers(filters: GetDashboardFilterDto);
+  getPaymentMethods(
+    filters: GetDashboardFilterDto,
+  ): Promise<{ labels: string[]; values: number[] }>;
+  getSalesByDistrict(
+    filters: GetDashboardFilterDto,
+  ): Promise<{ labels: string[]; values: number[] }>;
+  getSalesByCategory(
+    filters: GetDashboardFilterDto,
+  ): Promise<{ labels: string[]; values: number[] }>;
+  getSalesByHeadquarters(filters: GetDashboardFilterDto);
 }
