@@ -44,10 +44,7 @@ import { ProductStockTcpController } from './infrastructure/adapters/in/TCP/prod
     ]),
   ],
 
-  controllers: [
-    ProductRestController,
-    ProductStockTcpController
-  ],
+  controllers: [ProductRestController, ProductStockTcpController],
 
   providers: [
     ProductTypeOrmRepository,
