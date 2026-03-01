@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Inject,
   ParseIntPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
@@ -29,6 +30,10 @@ import {
   SalesReceiptListResponse,
   SalesReceiptDeletedResponseDto,
 } from '../../../../application/dto/out';
+import { PaymentTypeOrmEntity } from '../../../entity/payment-type-orm.entity';
+import { SunatCurrencyOrmEntity } from '../../../entity/sunat-currency-orm.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Controller('receipts')
 export class SalesReceiptRestController {
@@ -37,7 +42,14 @@ export class SalesReceiptRestController {
     private readonly receiptQueryService: ISalesReceiptQueryPort,
     @Inject('ISalesReceiptCommandPort')
     private readonly receiptCommandService: ISalesReceiptCommandPort,
+
+    @InjectRepository(PaymentTypeOrmEntity)
+    private readonly paymentTypeRepo: Repository<PaymentTypeOrmEntity>,
+    @InjectRepository(SunatCurrencyOrmEntity)
+    private readonly currencyRepo: Repository<SunatCurrencyOrmEntity>,
   ) {}
+
+  // ── COMMANDS ──────────────────────────────────────────────────────────────
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -53,10 +65,7 @@ export class SalesReceiptRestController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { reason: string },
   ): Promise<SalesReceiptResponseDto> {
-    const annulDto: AnnulSalesReceiptDto = {
-      receiptId: id,
-      reason: body.reason,
-    };
+    const annulDto: AnnulSalesReceiptDto = { receiptId: id, reason: body.reason };
     return this.receiptCommandService.annulReceipt(annulDto);
   }
 
@@ -68,18 +77,51 @@ export class SalesReceiptRestController {
     return this.receiptCommandService.deleteReceipt(id);
   }
 
-  @Get()
-  async listReceipts(
-    @Query() filters: ListSalesReceiptFilterDto,
-  ): Promise<SalesReceiptListResponse> {
-    return this.receiptQueryService.listReceipts(filters);
+  // ── QUERIES ESTÁTICAS — SIN parámetros dinámicos — VAN PRIMERO ───────────
+
+  @Get('payment-types')
+  async getPaymentTypes() {
+    return this.paymentTypeRepo.find({ order: { id: 'ASC' } });
   }
 
-  @Get(':id')
-  async getReceipt(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<SalesReceiptResponseDto | null> {
-    return this.receiptQueryService.getReceiptById(id);
+  @Get('currencies')
+  async getCurrencies() {
+    return this.currencyRepo.find({ order: { codigo: 'ASC' } });
+  }
+
+  @Get('kpi/semanal')
+  async getKpiSemanal(@Query('sedeId') sedeId?: string) {
+    return this.receiptQueryService.getKpiSemanal(
+      sedeId ? Number(sedeId) : undefined,
+    );
+  }
+
+  @Get('historial')
+  async listHistorial(
+    @Query('status') status?: string,
+    @Query('customerId') customerId?: string,
+    @Query('receiptTypeId') receiptTypeId?: string,
+    @Query('paymentMethodId') paymentMethodId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('search') search?: string,
+    @Query('sedeId') sedeId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const filters: ListSalesReceiptFilterDto = {
+      status: status as any,
+      customerId,
+      receiptTypeId:   receiptTypeId   ? Number(receiptTypeId)   : undefined,
+      paymentMethodId: paymentMethodId ? Number(paymentMethodId) : undefined,
+      dateFrom,
+      dateTo,
+      search,
+      sedeId: sedeId ? Number(sedeId) : undefined,
+      page:   page   ? Number(page)   : 1,
+      limit:  limit  ? Number(limit)  : 10,
+    };
+    return this.receiptQueryService.listReceiptsPaginated(filters);
   }
 
   @Get('serie/:serie')
@@ -89,10 +131,40 @@ export class SalesReceiptRestController {
     return this.receiptQueryService.getReceiptsBySerie(serie);
   }
 
+  @Get()
+  async listReceipts(
+    @Query() filters: ListSalesReceiptFilterDto,
+  ): Promise<SalesReceiptListResponse> {
+    return this.receiptQueryService.listReceipts(filters);
+  }
+
+  // ── QUERIES DINÁMICAS — CON :id — VAN AL FINAL ───────────────────────────
+
+  @Get(':id/detalle')
+  async getDetalleCompleto(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('historialPage') historialPage?: string,
+  ) {
+    const detalle = await this.receiptQueryService.getDetalleCompleto(
+      id,
+      historialPage ? Number(historialPage) : 1,
+    );
+    if (!detalle) throw new NotFoundException(`Comprobante ${id} no encontrado`);
+    return detalle;
+  }
+
+  @Get(':id')
+  async getReceipt(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<SalesReceiptResponseDto | null> {
+    return this.receiptQueryService.getReceiptById(id);
+  }
+
+  // ── TCP MESSAGE PATTERNS ──────────────────────────────────────────────────
+
   @MessagePattern({ cmd: 'verify_sale' })
   async verifySaleForRemission(@Payload() id_comprobante: number) {
-    const sale =
-      await this.receiptQueryService.verifySaleForRemission(id_comprobante);
+    const sale = await this.receiptQueryService.verifySaleForRemission(id_comprobante);
     return sale
       ? { success: true, data: sale }
       : { success: false, message: 'Venta no encontrada' };

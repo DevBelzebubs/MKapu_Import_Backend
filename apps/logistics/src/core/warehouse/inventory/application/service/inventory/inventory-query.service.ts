@@ -1,11 +1,12 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { IInventoryRepositoryPort } from '../../domain/ports/out/inventory-movement-ports-out';
-import { StockResponseDto } from '../dto/out/stock-response.dto';
-import { InventoryMapper } from '../mapper/inventory.mapper';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConteoInventarioOrmEntity } from '../../infrastructure/entity/inventory-count-orm.entity';
-import { ListInventoryCountFilterDto } from '../dto/in/list-inventory-count-filter.dto';
+import { ConteoInventarioOrmEntity } from '../../../infrastructure/entity/inventory-count-orm.entity';
+import { ListInventoryCountFilterDto } from '../../dto/in/list-inventory-count-filter.dto';
+import { IInventoryRepositoryPort } from '../../../domain/ports/out/inventory-movement-ports-out';
+import { StockResponseDto } from '../../dto/out/stock-response.dto';
+import { InventoryMapper } from '../../mapper/inventory.mapper';
+import { InventoryTypeOrmRepository } from '../../../infrastructure/adapters/out/repository/inventory-typeorm.repository';
 
 @Injectable()
 export class InventoryQueryService {
@@ -14,6 +15,7 @@ export class InventoryQueryService {
     private readonly repository: IInventoryRepositoryPort,
     @InjectRepository(ConteoInventarioOrmEntity)
     private readonly conteoRepo: Repository<ConteoInventarioOrmEntity>,
+    private readonly inventoryRepository: InventoryTypeOrmRepository,
   ) {}
 
   async getStock(
@@ -30,14 +32,13 @@ export class InventoryQueryService {
 
     return InventoryMapper.toStockResponseDto(stock);
   }
+
   async obtenerConteoConDetalles(idConteo: number) {
     const data = await this.conteoRepo.findOne({
       where: { idConteo },
       relations: ['detalles'],
       order: {
-        detalles: {
-          idDetalle: 'ASC',
-        },
+        detalles: { idDetalle: 'ASC' },
       },
     });
 
@@ -70,5 +71,8 @@ export class InventoryQueryService {
     const data = await query.getMany();
 
     return { status: 200, data };
+  }
+  async getMovementsHistory(filters: any) {
+    return await this.inventoryRepository.findAllMovements(filters);
   }
 }

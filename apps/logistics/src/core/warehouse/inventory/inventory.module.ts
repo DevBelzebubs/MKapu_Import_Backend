@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { InventoryMovementOrmEntity } from './infrastructure/entity/inventory-movement-orm.entity';
@@ -6,16 +6,35 @@ import { InventoryMovementDetailOrmEntity } from './infrastructure/entity/invent
 import { StockOrmEntity } from './infrastructure/entity/stock-orm-entity';
 import { WarehouseOrmEntity } from '../infrastructure/entity/warehouse-orm.entity';
 
-import { InventoryCommandService } from './application/service/inventory-command.service';
+import { InventoryCommandService } from './application/service/inventory/inventory-command.service';
 import { InventoryTypeOrmRepository } from './infrastructure/adapters/out/repository/inventory-typeorm.repository';
 import { InventoryMovementRestController } from './infrastructure/adapters/in/controllers/inventory-rest.controller';
-import { InventoryQueryService } from './application/service/inventory-query.service';
 import { ConteoInventarioOrmEntity } from './infrastructure/entity/inventory-count-orm.entity';
 import { ConteoInventarioDetalleOrmEntity } from './infrastructure/entity/inventory-count-detail-orm.entity';
 import { InventoryCountController } from './infrastructure/adapters/in/controllers/inventory-count.controller';
+import { InventoryCountRepository } from './infrastructure/adapters/out/repository/inventory-count.repository';
+import { InventoryCountCommandService } from './application/service/count/inventory-count-command.service';
+import { InventoryCountQueryService } from './application/service/count/inventory-count-query.service';
+import { InventoryQueryService } from './application/service/inventory/inventory-query.service';
+import { SedeOrmEntity } from '../../catalog/product/infrastructure/entity/sede-orm.entity';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ProductOrmEntity } from '../../catalog/product/infrastructure/entity/product-orm.entity';
+import { CategoryOrmEntity } from '../../catalog/product/infrastructure/entity/category-orm.entity';
+import { ProductModule } from '../../catalog/product/product.module';
 
 @Module({
   imports: [
+    forwardRef(() => ProductModule),
+    ClientsModule.register([
+      {
+        name: 'ADMIN_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: '127.0.0.1',
+          port: 3011,
+        },
+      },
+    ]),
     TypeOrmModule.forFeature([
       InventoryMovementOrmEntity,
       InventoryMovementDetailOrmEntity,
@@ -23,6 +42,9 @@ import { InventoryCountController } from './infrastructure/adapters/in/controlle
       ConteoInventarioDetalleOrmEntity,
       StockOrmEntity,
       WarehouseOrmEntity,
+      SedeOrmEntity,
+      ProductOrmEntity,
+      CategoryOrmEntity,
     ]),
   ],
   controllers: [InventoryMovementRestController, InventoryCountController],
@@ -38,12 +60,22 @@ import { InventoryCountController } from './infrastructure/adapters/in/controlle
       provide: 'IInventoryRepositoryPort',
       useClass: InventoryTypeOrmRepository,
     },
+    {
+      provide: 'IInventoryCountRepository',
+      useClass: InventoryCountRepository,
+    },
+    InventoryCountCommandService,
+    InventoryCountQueryService,
   ],
   exports: [
     InventoryCommandService,
     InventoryQueryService,
     InventoryTypeOrmRepository,
     'IInventoryRepositoryPort',
+    'IInventoryCountRepository',
+    InventoryCountCommandService,
+    InventoryCountQueryService,
+    InventoryTypeOrmRepository,
   ],
 })
 export class InventoryModule {}
