@@ -173,6 +173,7 @@ export class ProductQueryService implements IProductQueryPort {
       id_categoria,
       limit: 50,
       page: 1,
+      id_sede: 0,
     });
     return ProductMapper.toListResponse(products, total, 1, 50);
   }

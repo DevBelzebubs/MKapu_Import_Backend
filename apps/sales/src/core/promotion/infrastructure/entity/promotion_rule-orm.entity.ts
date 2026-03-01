@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { PromotionOrmEntity } from './promotion-orm.entity';
 
 @Entity('regla_promocion')
@@ -16,7 +22,7 @@ export class PromotionRuleOrmEntity {
   valor_condicion: string;
 
   // RELATION
-  @ManyToOne(() => PromotionOrmEntity, promo => promo.rules)
+  @ManyToOne(() => PromotionOrmEntity, (promo) => promo.rules)
   @JoinColumn({ name: 'id_promocion' })
   promotion: PromotionOrmEntity;
 }

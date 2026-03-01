@@ -12,11 +12,9 @@ import { SalesReceiptModule } from './core/sales-receipt/sales-receipt.module';
 import { CashboxModule } from './core/cashbox/cashbox.module';
 import { QuoteModule } from './core/quote/quote.module';
 import { DiscountModule } from './core/discount/discount.module';
-import { AccountingModule } from './core/accounting/accounting.module';
 import { ReportsModule } from './core/reports/reports.module';
 import { ClaimModule } from './core/claim/claim.module';
 import { CommissionModule } from './core/commission/commission.module';
-
 
 import { CustomerOrmEntity } from './core/customer/infrastructure/entity/customer-orm.entity';
 import { DocumentTypeOrmEntity } from './core/customer/infrastructure/entity/document-type-orm.entity';
@@ -32,7 +30,6 @@ import { WarrantyOrmEntity } from './core/warranty/infrastructure/entity/warrant
 import { WarrantyDetailOrmEntity } from './core/warranty/infrastructure/entity/warranty-detail-orm.entity';
 import { WarrantyStatusOrmEntity } from './core/warranty/infrastructure/entity/warranty-status-orm.entity';
 import { WarrantyTrackingOrmEntity } from './core/warranty/infrastructure/entity/warranty-tracking-orm.entity';
-
 
 import { WarrantyRestController } from './core/warranty/infrastructure/adapters/in/warranty-rest.controller';
 import { WarrantyCommandService } from './core/warranty/application/service/warranty-command.service';
@@ -56,7 +53,6 @@ import { PromotionRuleOrmEntity } from './core/promotion/infrastructure/entity/p
 import { DiscountAppliedOrmEntity } from './core/promotion/infrastructure/entity/discount_applied-orm.entity';
 import { AccountReceivableOrmEntity } from './core/account-receivable/infrastructure/entity/account-receivable-orm.entity';
 import { AccountReceivableModule } from './core/account-receivable/account-receivable.module';
-
 
 @Module({
   imports: [
@@ -139,7 +135,7 @@ import { AccountReceivableModule } from './core/account-receivable/account-recei
     ClaimModule,
     CommissionModule,
     DiscountModule,
-    AccountReceivableModule
+    AccountReceivableModule,
   ],
   controllers: [SalesController, WarrantyRestController],
   providers: [

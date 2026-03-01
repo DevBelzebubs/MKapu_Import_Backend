@@ -11,13 +11,10 @@ import {
   SalesReceiptOrmEntity,
 } from 'apps/sales/src/core/sales-receipt/infrastructure/entity/sales-receipt-orm.entity';
 import { CustomerOrmEntity } from 'apps/sales/src/core/customer/infrastructure/entity/customer-orm.entity';
-import { ProductOrmEntity } from 'apps/logistics/src/core/catalog/product/infrastructure/entity/product-orm.entity';
 import { IReportsRepositoryPort } from '../../../../domain/ports/out/reports-repository.port';
-import { GetSalesReportDto } from '../../../../application/dto/in/get-sales-report.dto';
 import { SalesReportRow } from '../../../../domain/entity/sales-report-row.entity';
 import { PaymentOrmEntity } from 'apps/sales/src/core/sales-receipt/infrastructure/entity/payment-orm.entity';
 import { PaymentTypeOrmEntity } from 'apps/sales/src/core/sales-receipt/infrastructure/entity/payment-type-orm.entity';
-import { GetDashboardFilterDto } from '../../../../application/dto/in/get-dashboard-filter.dto';
 
 @Injectable()
 export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
@@ -27,11 +24,13 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     @InjectRepository(CustomerOrmEntity)
     private readonly customerRepository: Repository<CustomerOrmEntity>,
   ) {}
+
   async getSalesDashboard(filters: any): Promise<SalesReportRow[]> {
     const startDate = filters.startDate
       ? new Date(filters.startDate)
       : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
     const endDate = filters.endDate ? new Date(filters.endDate) : new Date();
+
     const query = this.salesReceiptRepository
       .createQueryBuilder('sr')
       .leftJoin('sr.cliente', 'c')
@@ -49,9 +48,13 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
       .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
-      })
-      .orderBy('sr.fec_emision', 'DESC')
-      .limit(10);
+      });
+
+    if (filters.idSede) {
+      query.andWhere('sr.id_sede_ref = :idSede', { idSede: filters.idSede });
+    }
+
+    query.orderBy('sr.fec_emision', 'DESC').limit(10);
 
     const rawResults = await query.getRawMany();
 
@@ -71,8 +74,13 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
       } as unknown as SalesReportRow;
     });
   }
-  async getPaymentMethodsData(startDate: Date, endDate: Date): Promise<any[]> {
-    const rawQuery = `
+
+  async getPaymentMethodsData(
+    startDate: Date,
+    endDate: Date,
+    idSede?: string,
+  ): Promise<any[]> {
+    let rawQuery = `
       SELECT 
         tp.descripcion AS metodo, 
         SUM(p.monto) AS total
@@ -80,15 +88,19 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
       INNER JOIN pago p ON p.id_comprobante = sr.id_comprobante
       INNER JOIN tipo_pago tp ON tp.id_tipo_pago = p.id_tipo_pago
       WHERE sr.fec_emision BETWEEN ? AND ? 
-        -- AND sr.estado = ?
-      GROUP BY tp.descripcion
+        AND sr.estado = ?
     `;
 
-    return await this.salesReceiptRepository.query(rawQuery, [
-      startDate,
-      endDate,
-      ReceiptStatusOrm.EMITIDO,
-    ]);
+    const params: any[] = [startDate, endDate, ReceiptStatusOrm.EMITIDO];
+
+    if (idSede) {
+      rawQuery += ` AND sr.id_sede_ref = ?`;
+      params.push(idSede);
+    }
+
+    rawQuery += ` GROUP BY tp.descripcion`;
+
+    return await this.salesReceiptRepository.query(rawQuery, params);
   }
 
   async getKpisData(
@@ -107,7 +119,6 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
       .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO });
 
     if (id_sede) {
-      // Corregido: id_sede_ref
       query.andWhere('sr.id_sede_ref = :id_sede', { id_sede });
     }
 
@@ -118,15 +129,38 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     };
   }
 
-  async getTotalClientes(startDate: Date, endDate: Date): Promise<number> {
-    return await this.customerRepository
+  async getTotalClientes(
+    startDate: Date,
+    endDate: Date,
+    idSede?: string,
+  ): Promise<number> {
+    const query = this.customerRepository
       .createQueryBuilder('c')
-      .where('c.estado = :estado', { estado: 1 })
-      .getCount();
+      .where('c.estado = :estado', { estado: 1 });
+
+    if (idSede) {
+      query
+        .innerJoin(
+          SalesReceiptOrmEntity,
+          'sr',
+          'sr.id_cliente_ref = c.id_cliente',
+        )
+        .andWhere('sr.id_sede_ref = :idSede', { idSede })
+        .andWhere('sr.fec_emision BETWEEN :startDate AND :endDate', {
+          startDate,
+          endDate,
+        });
+    }
+
+    return await query.getCount();
   }
 
-  async getSalesChartData(startDate: Date, endDate: Date): Promise<any[]> {
-    return await this.salesReceiptRepository
+  async getSalesChartData(
+    startDate: Date,
+    endDate: Date,
+    idSede?: string,
+  ): Promise<any[]> {
+    const query = this.salesReceiptRepository
       .createQueryBuilder('sr')
       .select('DATE(sr.fec_emision)', 'fecha')
       .addSelect('SUM(sr.total)', 'total')
@@ -134,7 +168,13 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
         startDate,
         endDate,
       })
-      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO })
+      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO });
+
+    if (idSede) {
+      query.andWhere('sr.id_sede_ref = :idSede', { idSede });
+    }
+
+    return await query
       .groupBy('DATE(sr.fec_emision)')
       .orderBy('fecha', 'ASC')
       .getRawMany();
@@ -144,8 +184,9 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     startDate: Date,
     endDate: Date,
     limit: number = 5,
+    idSede?: string,
   ): Promise<any[]> {
-    const rawQuery = `
+    let rawQuery = `
       SELECT 
         u.nombres,
         u.ape_pat,
@@ -158,25 +199,32 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
       INNER JOIN mkp_administracion.sede s ON s.id_sede = u.id_sede
       WHERE sr.fec_emision BETWEEN ? AND ? 
         AND sr.estado = ?
+    `;
+
+    const params: any[] = [startDate, endDate, ReceiptStatusOrm.EMITIDO];
+
+    if (idSede) {
+      rawQuery += ` AND sr.id_sede_ref = ?`;
+      params.push(idSede);
+    }
+
+    rawQuery += `
       GROUP BY u.id_usuario, s.id_sede
       ORDER BY montoTotal DESC
       LIMIT ?
     `;
-    // Eliminamos 'u.url_avatar' porque no existe en tu UserOrmEntity actual
-    return await this.salesReceiptRepository.query(rawQuery, [
-      startDate,
-      endDate,
-      ReceiptStatusOrm.EMITIDO,
-      limit,
-    ]);
+    params.push(limit);
+
+    return await this.salesReceiptRepository.query(rawQuery, params);
   }
 
   async getSalesByDistrictData(
     startDate: Date,
     endDate: Date,
     limit: number = 5,
+    idSede?: string,
   ): Promise<any[]> {
-    return await this.salesReceiptRepository
+    const query = this.salesReceiptRepository
       .createQueryBuilder('sr')
       .innerJoin('sr.cliente', 'c')
       .select('TRIM(SUBSTRING_INDEX(c.direccion, ",", -1))', 'distrito')
@@ -185,7 +233,13 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
         startDate,
         endDate,
       })
-      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO })
+      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO });
+
+    if (idSede) {
+      query.andWhere('sr.id_sede_ref = :idSede', { idSede });
+    }
+
+    return await query
       .groupBy('distrito')
       .orderBy('total', 'DESC')
       .limit(limit)
@@ -196,8 +250,9 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     startDate: Date,
     endDate: Date,
     limit: number = 5,
+    idSede?: string,
   ): Promise<any[]> {
-    return await this.salesReceiptRepository
+    const query = this.salesReceiptRepository
       .createQueryBuilder('sr')
       .innerJoin('sr.details', 'detail')
       .select('detail.descripcion', 'nombre')
@@ -207,7 +262,13 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
         startDate,
         endDate,
       })
-      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO })
+      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO });
+
+    if (idSede) {
+      query.andWhere('sr.id_sede_ref = :idSede', { idSede });
+    }
+
+    return await query
       .groupBy('detail.descripcion')
       .orderBy('ingresos', 'DESC')
       .limit(limit)
@@ -218,8 +279,9 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     startDate: Date,
     endDate: Date,
     limit: number = 5,
+    idSede?: string,
   ): Promise<any[]> {
-    const rawQuery = `
+    let rawQuery = `
       SELECT 
         c.nombre AS categoria, 
         SUM(d.cantidad * d.pre_uni) AS total
@@ -229,24 +291,31 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
       INNER JOIN mkp_logistica.categoria c ON c.id_categoria = p.id_categoria
       WHERE sr.fec_emision BETWEEN ? AND ? 
         AND sr.estado = ?
+    `;
+
+    const params: any[] = [startDate, endDate, ReceiptStatusOrm.EMITIDO];
+
+    if (idSede) {
+      rawQuery += ` AND sr.id_sede_ref = ?`;
+      params.push(idSede);
+    }
+
+    rawQuery += `
       GROUP BY c.nombre
       ORDER BY total DESC
       LIMIT ?
     `;
+    params.push(limit);
 
-    return await this.salesReceiptRepository.query(rawQuery, [
-      startDate,
-      endDate,
-      ReceiptStatusOrm.EMITIDO,
-      limit,
-    ]);
+    return await this.salesReceiptRepository.query(rawQuery, params);
   }
 
   async getSalesByHeadquarterData(
     startDate: Date,
     endDate: Date,
+    idSede?: string,
   ): Promise<any[]> {
-    return await this.salesReceiptRepository
+    const query = this.salesReceiptRepository
       .createQueryBuilder('sr')
       .select('sr.id_sede_ref', 'sede')
       .addSelect('SUM(sr.total)', 'total')
@@ -254,7 +323,13 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
         startDate,
         endDate,
       })
-      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO })
+      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO });
+
+    if (idSede) {
+      query.andWhere('sr.id_sede_ref = :idSede', { idSede });
+    }
+
+    return await query
       .groupBy('sr.id_sede_ref')
       .orderBy('total', 'DESC')
       .getRawMany();

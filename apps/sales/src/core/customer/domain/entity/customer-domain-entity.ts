@@ -1,7 +1,3 @@
-/* ============================================
-   sales/src/core/customer/domain/entity/customer-domain-entity.ts
-   ============================================ */
-
 export interface CustomerProps {
   id_cliente?: string;
   id_tipo_documento: number;
@@ -40,25 +36,50 @@ export class Customer {
       if (!this.props.razon_social?.trim()) {
         throw new Error('Business name is required for RUC');
       }
-    } else {                                        // ← este ELSE es clave
+    } else {
+      // ← este ELSE es clave
       if (!this.props.nombres?.trim()) {
         throw new Error('Name is required');
       }
     }
   }
-  
-  get id_cliente(): string | undefined          { return this.props.id_cliente; }
-  get id_tipo_documento(): number               { return this.props.id_tipo_documento; }
-  get valor_doc(): string                       { return this.props.valor_doc; }
-  get nombres(): string                         { return this.props.nombres; }
-  get apellidos(): string | undefined           { return this.props.apellidos; }
-  get razon_social(): string | undefined        { return this.props.razon_social; }
-  get direccion(): string | undefined           { return this.props.direccion; }
-  get email(): string | undefined               { return this.props.email; }
-  get telefono(): string | undefined            { return this.props.telefono; }
-  get estado(): boolean                         { return this.props.estado ?? true; }
-  get tipoDocumentoDescripcion(): string | undefined { return this.props.tipoDocumentoDescripcion; }
-  get tipoDocumentoCodSunat(): string | undefined    { return this.props.tipoDocumentoCodSunat; }
+
+  get id_cliente(): string | undefined {
+    return this.props.id_cliente;
+  }
+  get id_tipo_documento(): number {
+    return this.props.id_tipo_documento;
+  }
+  get valor_doc(): string {
+    return this.props.valor_doc;
+  }
+  get nombres(): string {
+    return this.props.nombres;
+  }
+  get apellidos(): string | undefined {
+    return this.props.apellidos;
+  }
+  get razon_social(): string | undefined {
+    return this.props.razon_social;
+  }
+  get direccion(): string | undefined {
+    return this.props.direccion;
+  }
+  get email(): string | undefined {
+    return this.props.email;
+  }
+  get telefono(): string | undefined {
+    return this.props.telefono;
+  }
+  get estado(): boolean {
+    return this.props.estado ?? true;
+  }
+  get tipoDocumentoDescripcion(): string | undefined {
+    return this.props.tipoDocumentoDescripcion;
+  }
+  get tipoDocumentoCodSunat(): string | undefined {
+    return this.props.tipoDocumentoCodSunat;
+  }
 
   getDisplayName(): string {
     if (this.props.razon_social?.trim()) {

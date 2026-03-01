@@ -133,17 +133,15 @@ export class RemissionTypeormRepository implements RemissionPortOut {
     const { page = 1, limit = 10, search, estado, startDate, endDate } = filter;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.repository
-      .createQueryBuilder('remission')
-      .skip(skip)
-      .take(limit)
-      .orderBy('remission.fecha_emision', 'DESC');
+    const queryBuilder = this.repository.createQueryBuilder('remission');
 
     if (search) {
-      queryBuilder.andWhere('remission.transferReason ILIKE :search', {
-        search: `%${search}%`,
-      });
+      queryBuilder.andWhere(
+        '(remission.motivo_traslado LIKE :search OR remission.numero LIKE :search OR remission.serie LIKE :search)',
+        { search: `%${search}%` },
+      );
     }
+
     if (estado !== undefined && estado !== null) {
       queryBuilder.andWhere('remission.estado = :estado', { estado });
     }
@@ -157,13 +155,25 @@ export class RemissionTypeormRepository implements RemissionPortOut {
         },
       );
     }
-    const [ormEntities, total] = await queryBuilder.getManyAndCount();
+
+    // 🚀 FIX: Contamos TODOS los registros que coinciden con el filtro ANTES de aplicar limit/offset
+    const total = await queryBuilder.getCount();
+
+    // 2. Aplicamos paginación y ordenamiento
+    queryBuilder
+      .orderBy('remission.fecha_emision', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    // 3. Obtenemos solo los datos de la página actual
+    const ormEntities = await queryBuilder.getMany();
 
     return {
       data: ormEntities.map((entity) => RemissionMapper.toDomain(entity)),
-      total,
+      total, // Ahora sí devolverá 4 (o el número real que haya en la BD)
     };
   }
+
   async getSummaryInfo(startDate: Date, endDate: Date): Promise<any> {
     const qb = this.repository
       .createQueryBuilder('remission')

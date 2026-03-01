@@ -7,35 +7,29 @@ import { SalesReportRow } from '../../domain/entity/sales-report-row.entity';
 import { GetSalesReportDto } from '../dto/in/get-sales-report.dto';
 import { IReportsRepositoryPort } from '../../domain/ports/out/reports-repository.port';
 import { GetDashboardFilterDto } from '../dto/in/get-dashboard-filter.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CustomerOrmEntity } from '../../../customer/infrastructure/entity/customer-orm.entity';
-import { SalesReceiptOrmEntity } from '../../../sales-receipt/infrastructure/entity/sales-receipt-orm.entity';
 
 @Injectable()
 export class ReportsService implements IReportsUseCase {
   constructor(
     @Inject('IReportsRepositoryPort')
     private readonly reportsRepository: IReportsRepositoryPort,
-    @InjectRepository(SalesReceiptOrmEntity)
-    private readonly salesReceiptRepository: Repository<SalesReceiptOrmEntity>,
-    @InjectRepository(CustomerOrmEntity)
-    private readonly customerRepository: Repository<CustomerOrmEntity>,
   ) {}
   async getRecentSales(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);
 
-    // Convertimos los objetos Date a string (formato ISO 8601) para que el DTO no lance error
     return await this.reportsRepository.getSalesDashboard({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
+      sedeId: filters.id_sede,
     });
   }
+
   async generateSalesReport(
     filters: GetSalesReportDto,
   ): Promise<SalesReportRow[]> {
     return await this.reportsRepository.getSalesDashboard(filters);
   }
+
   async getKpis(filters: GetDashboardFilterDto) {
     const { startDate, endDate, prevStartDate, prevEndDate } =
       this.calculateDates(filters.periodo);
@@ -44,22 +38,24 @@ export class ReportsService implements IReportsUseCase {
     const currentKpis = await this.reportsRepository.getKpisData(
       startDate,
       endDate,
-      filters.id_sede,
+      filters.id_sede, // Ya lo tenía
     );
     const currentClientes = await this.reportsRepository.getTotalClientes(
       startDate,
       endDate,
+      filters.id_sede, // 🚀 Añadido
     );
 
     // Obtener data anterior para calcular variaciones
     const prevKpis = await this.reportsRepository.getKpisData(
       prevStartDate,
       prevEndDate,
-      filters.id_sede,
+      filters.id_sede, // Ya lo tenía
     );
     const prevClientes = await this.reportsRepository.getTotalClientes(
       prevStartDate,
       prevEndDate,
+      filters.id_sede, // 🚀 Añadido
     );
 
     const ticketPromedio =
@@ -77,21 +73,27 @@ export class ReportsService implements IReportsUseCase {
       ticketPromedio: ticketPromedio,
       nuevosClientes: currentClientes,
       variaciones: {
-        ventas: this.calculatePercentage(
+        ventas: await this.calculatePercentage(
           currentKpis.totalVentas,
           prevKpis.totalVentas,
         ),
-        ordenes: this.calculatePercentage(
+        ordenes: await this.calculatePercentage(
           currentKpis.totalOrdenes,
           prevKpis.totalOrdenes,
         ),
-        ticket: this.calculatePercentage(ticketPromedio, prevTicketPromedio),
-        clientes: this.calculatePercentage(currentClientes, prevClientes),
+        ticket: await this.calculatePercentage(
+          ticketPromedio,
+          prevTicketPromedio,
+        ),
+        clientes: await this.calculatePercentage(currentClientes, prevClientes),
       },
     };
   }
 
-  calculatePercentage(current: number, previous: number): Promise<number> {
+  async calculatePercentage(
+    current: number,
+    previous: number,
+  ): Promise<number> {
     if (previous === 0) return Promise.resolve(current > 0 ? 100 : 0);
     return Promise.resolve(
       parseFloat((((current - previous) / previous) * 100).toFixed(2)),
@@ -129,47 +131,13 @@ export class ReportsService implements IReportsUseCase {
 
     return { startDate, endDate, prevStartDate, prevEndDate };
   }
-  async getKpisData(
-    startDate: Date,
-    endDate: Date,
-    id_sede?: string,
-  ): Promise<{ totalVentas: number; totalOrdenes: number }> {
-    const query = this.salesReceiptRepository
-      .createQueryBuilder('sr')
-      .select('SUM(sr.total)', 'totalVentas')
-      .addSelect('COUNT(sr.id)', 'totalOrdenes')
-      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      })
-      .andWhere('sr.estado = :estado', { estado: true });
 
-    if (id_sede) {
-      query.andWhere('sr.id_sede = :id_sede', { id_sede });
-    }
-
-    const result = await query.getRawOne();
-
-    return {
-      totalVentas: parseFloat(result.totalVentas || '0'),
-      totalOrdenes: parseInt(result.totalOrdenes || '0', 10),
-    };
-  }
-
-  async getTotalClientes(startDate: Date, endDate: Date): Promise<number> {
-    return await this.customerRepository
-      .createQueryBuilder('c')
-      .where('c.createdAt BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      })
-      .getCount();
-  }
   async getSalesChart(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);
     const rawData = await this.reportsRepository.getSalesChartData(
       startDate,
       endDate,
+      filters.id_sede, // 🚀 Añadido
     );
     const labels: string[] = [];
     const values: number[] = [];
@@ -183,6 +151,7 @@ export class ReportsService implements IReportsUseCase {
 
     return { labels, values };
   }
+
   async getTopProducts(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);
 
@@ -190,6 +159,7 @@ export class ReportsService implements IReportsUseCase {
       startDate,
       endDate,
       5,
+      filters.id_sede, // 🚀 Añadido
     );
     return rawData.map((item) => ({
       nombre: item.nombre,
@@ -197,39 +167,38 @@ export class ReportsService implements IReportsUseCase {
       ingresos: `S/ ${parseFloat(item.ingresos).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
     }));
   }
+
   async getTopSellers(filters: GetDashboardFilterDto) {
-    // 1. Calculamos las fechas aquí (Lógica de negocio)
     const { startDate, endDate } = this.calculateDates(filters.periodo);
 
-    // 2. Llamamos al repositorio
     const rawData = await this.reportsRepository.getTopSellersData(
       startDate,
       endDate,
       5,
+      filters.id_sede, // 🚀 Añadido
     );
 
-    // 3. Mapeamos y formateamos la data para Angular
     return rawData.map((item) => {
       const monto = parseFloat(item.montoTotal || '0');
       const ventas = parseInt(item.totalVentas || '0', 10);
 
       return {
-        // Unimos los 3 campos de nombre
         nombre: `${item.nombres} ${item.ape_pat} ${item.ape_mat}`.trim(),
         totalVentas: ventas,
         montoTotal: `S/ ${monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`,
         ticketPromedio: `S/ ${(ventas > 0 ? monto / ventas : 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`,
         sede: item.nombre_sede || 'Sede Central',
-        // Como no hay foto en la DB, enviamos null para que el front use la inicial
         foto: null,
       };
     });
   }
+
   async getPaymentMethods(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);
     const rawData = await this.reportsRepository.getPaymentMethodsData(
       startDate,
       endDate,
+      filters.id_sede,
     );
 
     const labels: string[] = [];
@@ -250,6 +219,7 @@ export class ReportsService implements IReportsUseCase {
       values: values.length > 0 ? values : [0],
     };
   }
+
   async getSalesByDistrict(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);
 
@@ -257,13 +227,13 @@ export class ReportsService implements IReportsUseCase {
       startDate,
       endDate,
       5,
+      filters.id_sede, // 🚀 Añadido
     );
 
     const labels: string[] = [];
     const values: number[] = [];
 
     rawData.forEach((item) => {
-      // Si la dirección estaba vacía o nula, evitamos enviar un dato roto al frontend
       const distritoLabel =
         item.distrito && item.distrito !== '' ? item.distrito : 'Sin Distrito';
 
@@ -273,6 +243,7 @@ export class ReportsService implements IReportsUseCase {
 
     return { labels, values };
   }
+
   async getSalesByCategory(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);
 
@@ -280,13 +251,13 @@ export class ReportsService implements IReportsUseCase {
       startDate,
       endDate,
       5,
+      filters.id_sede, // 🚀 Ya lo tenía
     );
 
     const labels: string[] = [];
     const values: number[] = [];
 
     rawData.forEach((item) => {
-      // Evitamos valores nulos
       const categoriaLabel = item.categoria ? item.categoria : 'Sin Categoría';
 
       labels.push(categoriaLabel);
@@ -295,11 +266,13 @@ export class ReportsService implements IReportsUseCase {
 
     return { labels, values };
   }
+
   async getSalesByHeadquarters(filters: GetDashboardFilterDto) {
     const { startDate, endDate } = this.calculateDates(filters.periodo);
     const rawData = await this.reportsRepository.getSalesByHeadquarterData(
       startDate,
       endDate,
+      filters.id_sede, // 🚀 Añadido
     );
     const sedesMap: { [key: string]: string } = {
       SEDE001: 'Las Flores',

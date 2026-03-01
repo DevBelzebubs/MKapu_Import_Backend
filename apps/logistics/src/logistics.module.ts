@@ -14,7 +14,7 @@ import { TransferModule } from './core/warehouse/transfer/transfer.module';
 import { SupplierModule } from './core/procurement/supplier/supplier.module';
 import { WastageModule } from './core/catalog/wastage/wastage.module';
 import { InventoryModule } from './core/warehouse/inventory/inventory.module';
-import { AuctionModule} from './core/catalog/auction/auction.module';
+import { AuctionModule } from './core/catalog/auction/auction.module';
 
 //entities ORM
 import { StoreOrmEntity } from './core/warehouse/store/infrastructure/entity/store-orm.entity';
@@ -37,7 +37,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { WarehouseModule } from './core/warehouse/warehouse.module';
 import { WarehouseOrmEntity } from './core/warehouse/infrastructure/entity/warehouse-orm.entity';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -57,7 +56,7 @@ import { WarehouseOrmEntity } from './core/warehouse/infrastructure/entity/wareh
         username: configService.get<string>('LOGISTICS_DB_USERNAME'),
         password: configService.get<string>('LOGISTICS_DB_PASSWORD'),
         database: configService.get<string>('LOGISTICS_DB_DATABASE'),
-        entities:[
+        entities: [
           CategoryOrmEntity,
           StoreOrmEntity,
           ProductOrmEntity,
@@ -72,7 +71,7 @@ import { WarehouseOrmEntity } from './core/warehouse/infrastructure/entity/wareh
           AuctionOrmEntity,
           AuctionDetailOrmEntity,
           WarehouseOrmEntity,
-          StoreOrmEntity
+          StoreOrmEntity,
         ],
         autoLoadEntities: true,
         synchronize: false,
@@ -92,7 +91,6 @@ import { WarehouseOrmEntity } from './core/warehouse/infrastructure/entity/wareh
     AuctionModule,
     RemissionModule,
     WarehouseModule,
-
   ],
   controllers: [LogisticsController],
   providers: [LogisticsService],

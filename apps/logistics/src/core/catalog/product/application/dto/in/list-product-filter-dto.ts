@@ -1,15 +1,17 @@
-/* ============================================
-   APPLICATION LAYER - DTO IN
-   logistics/src/core/catalog/product/application/dto/in/list-product-filter-dto.ts
-   ============================================ */
-
-import { IsOptional, IsString, IsNumber, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ListProductFilterDto {
   @IsOptional()
   @IsString()
-  search?: string; // Campo para coincidencia de caracteres (código, descripción, anexo)
+  search?: string;
 
   @IsOptional()
   @IsBoolean()
@@ -19,7 +21,7 @@ export class ListProductFilterDto {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  id_categoria?: number; // Ej: Freidora: 1, Parrilla: 6, Balanza: 9
+  id_categoria?: number;
 
   @IsOptional()
   @IsNumber()
@@ -31,14 +33,18 @@ export class ListProductFilterDto {
   @Type(() => Number)
   maxPrice?: number;
 
-  // Configuración para vista 5 por 5 en MKapu Import
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  page?: number = 1; 
+  page?: number = 1;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  limit?: number = 5; 
+  limit?: number = 5;
+
+  @IsNotEmpty()
+  @IsInt()
+  @Type(() => Number)
+  id_sede: number;
 }

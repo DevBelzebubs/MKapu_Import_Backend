@@ -6,7 +6,6 @@ export interface IReportsUseCase {
   generateSalesReport(filters: GetSalesReportDto): Promise<SalesReportRow[]>;
   calculatePercentage(current: number, previous: number): Promise<number>;
   getKpis(filters: GetDashboardFilterDto): Promise<any>;
-  getTotalClientes(startDate: Date, endDate: Date): Promise<number>;
   getSalesChart(
     filters: GetDashboardFilterDto,
   ): Promise<{ labels: string[]; values: number[] }>;
