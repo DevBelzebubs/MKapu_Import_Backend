@@ -236,18 +236,17 @@ export class ReportsService implements IReportsUseCase {
     const values: number[] = [];
 
     rawData.forEach((item) => {
-      // 🚀 DEFENSA TOTAL: Buscamos el valor en todas las variantes posibles que TypeORM genera
-      const label =
-        item.metodo || item.tipo_descripcion || item.descripcion || 'Otro';
-      const valor = parseFloat(item.total || item.SUM || '0');
+      const labelTexto = item.metodo ? String(item.metodo).trim() : 'Otros';
+      const valorNumerico = parseFloat(item.total || '0');
 
-      labels.push(label);
-      values.push(valor);
+      if (valorNumerico > 0) {
+        labels.push(labelTexto);
+        values.push(valorNumerico);
+      }
     });
 
-    // Si no hay datos, enviamos un array vacío coherente
     return {
-      labels: labels.length > 0 ? labels : ['Sin datos'],
+      labels: labels.length > 0 ? labels : ['Sin datos en este periodo'],
       values: values.length > 0 ? values : [0],
     };
   }

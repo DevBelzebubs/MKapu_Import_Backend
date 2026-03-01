@@ -72,35 +72,25 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     });
   }
   async getPaymentMethodsData(startDate: Date, endDate: Date): Promise<any[]> {
-    // Usamos getRawMany() y nos aseguramos de que el alias sea simple
-    return await this.salesReceiptRepository
-      .createQueryBuilder('sr')
-      .innerJoin(
-        PaymentOrmEntity,
-        'pago',
-        'pago.id_comprobante = sr.id_comprobante',
-      )
-      .innerJoin(
-        PaymentTypeOrmEntity,
-        'tipo',
-        'tipo.id_tipo_pago = pago.id_tipo_pago',
-      )
-      /* 🚀 TRUCO: Si 'descripcion' te sale undefined, prueba con 'nombre'. 
-         Si no estás seguro, verifica en tu BD (tabla tipo_pago). 
-         Aquí forzamos el alias entre comillas invertidas para MySQL.
-      */
-      .select('tipo.descripcion', 'metodo')
-      .addSelect('SUM(pago.monto)', 'total')
-      .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      })
-      .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO })
-      .groupBy('tipo.descripcion')
-      .getRawMany();
+    const rawQuery = `
+      SELECT 
+        tp.descripcion AS metodo, 
+        SUM(p.monto) AS total
+      FROM comprobante_venta sr
+      INNER JOIN pago p ON p.id_comprobante = sr.id_comprobante
+      INNER JOIN tipo_pago tp ON tp.id_tipo_pago = p.id_tipo_pago
+      WHERE sr.fec_emision BETWEEN ? AND ? 
+        -- AND sr.estado = ?
+      GROUP BY tp.descripcion
+    `;
+
+    return await this.salesReceiptRepository.query(rawQuery, [
+      startDate,
+      endDate,
+      ReceiptStatusOrm.EMITIDO,
+    ]);
   }
 
-  // 1. KPIs
   async getKpisData(
     startDate: Date,
     endDate: Date,
@@ -109,13 +99,11 @@ export class ReportsTypeOrmRepository implements IReportsRepositoryPort {
     const query = this.salesReceiptRepository
       .createQueryBuilder('sr')
       .select('SUM(sr.total)', 'totalVentas')
-      // Corregido: id_comprobante
       .addSelect('COUNT(sr.id_comprobante)', 'totalOrdenes')
       .where('sr.fec_emision BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
       })
-      // Corregido: uso del Enum
       .andWhere('sr.estado = :estado', { estado: ReceiptStatusOrm.EMITIDO });
 
     if (id_sede) {
