@@ -1,13 +1,14 @@
 import {
-  Body,
   Controller,
   Get,
   Inject,
+  UseGuards,
+  Body,
   Param,
   ParseIntPipe,
   Patch,
   Post,
-  UseGuards,
+  Query,
 } from '@nestjs/common';
 import { IDispatchInputPort } from '../../../../domain/ports/in/dispatch-input.port';
 import { IDispatchQueryPort } from '../../../../application/service/dispatch-query.service';
@@ -34,8 +35,18 @@ export class DispatchRestController {
 
   @Get()
   @Roles('CREAR_DESPACHO', 'ADMINISTRADOR', 'ADMINISTRACION')
-  findAll() {
-    return this.queryService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('fechaDesde') fechaDesde?: string,
+    @Query('fechaHasta') fechaHasta?: string,
+  ) {
+    return this.queryService.findAll({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      fechaDesde: fechaDesde || undefined,
+      fechaHasta: fechaHasta || undefined,
+    });
   }
 
   @Get('venta/:id_venta')

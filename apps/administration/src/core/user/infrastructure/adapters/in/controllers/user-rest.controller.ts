@@ -1,7 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+// administration/src/core/user/infrastructure/adapters/in/controllers/user-rest.controller.ts
+
 import {
   Controller,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -13,6 +18,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   IUserCommandPort,
   IUserQueryPort,
@@ -33,6 +39,10 @@ import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorator
 import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
 import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
 
+import { ChangeAccountCredentialsDto } from '../../../../application/dto/in/change-account-credentials-dto';
+import { AccountCredentialsResponseDto } from '../../../../application/dto/out/account-credentials-response.dto';
+
+@ApiTags('users')
 @UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('users')
 export class UserRestController {
@@ -43,7 +53,6 @@ export class UserRestController {
     private readonly userCommandService: IUserCommandPort,
     private readonly userGateway: UserWebSocketGateway,
   ) {}
-
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Roles('ADMINISTRADOR', 'ADMINISTRACION')
@@ -62,10 +71,7 @@ export class UserRestController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Omit<UpdateUserDto, 'id_usuario'>,
   ): Promise<UserResponseDto> {
-    const fullUpdateDto: UpdateUserDto = {
-      ...updateDto,
-      id_usuario: id,
-    };
+    const fullUpdateDto: UpdateUserDto = { ...updateDto, id_usuario: id };
     const updatedUser = await this.userCommandService.updateUser(fullUpdateDto);
     this.userGateway.notifyUserUpdated(updatedUser);
     return updatedUser;
@@ -82,11 +88,9 @@ export class UserRestController {
       id_usuario: id,
       activo: statusDto.activo,
     };
-
     const updatedUser =
       await this.userCommandService.changeUserStatus(changeStatusDto);
     this.userGateway.notifyUserStatusChanged(updatedUser);
-
     return updatedUser;
   }
 
@@ -100,7 +104,6 @@ export class UserRestController {
     this.userGateway.notifyUserDeleted(id);
     return deletedUser;
   }
-
   @Get()
   @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async listUsers(
@@ -117,7 +120,9 @@ export class UserRestController {
 
   @Get(':id')
   @Roles('ADMINISTRADOR', 'ADMINISTRACION')
-  async getUser(@Param('id') id: number) {
+  async getUser(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserResponseDto> {
     return this.userQueryService.getUserById(id);
   }
 
@@ -125,5 +130,28 @@ export class UserRestController {
   @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async getUserWithAccount(@Param('id') id: number) {
     return await this.userQueryService.getUserWithAccount(id);
+  }
+
+  @Get(':id/account')
+  @ApiOperation({
+    summary: 'Obtener datos actuales de la cuenta (nom_usu, email)',
+  })
+  @HttpCode(HttpStatus.OK)
+  async getAccount(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AccountCredentialsResponseDto> {
+    return await this.userQueryService.getAccountByUserId(id);
+  }
+
+  @Patch(':id/account/credentials')
+  @ApiOperation({ summary: 'Cambiar credenciales de cuenta' })
+  @ApiBody({ type: ChangeAccountCredentialsDto })
+  @HttpCode(HttpStatus.OK)
+  async changeCredentials(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: Omit<ChangeAccountCredentialsDto, 'id_usuario'>,
+  ): Promise<AccountCredentialsResponseDto> {
+    const dto: ChangeAccountCredentialsDto = { ...body, id_usuario: id };
+    return await this.userCommandService.changeCredentials(dto);
   }
 }
