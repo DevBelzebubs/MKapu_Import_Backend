@@ -1,49 +1,69 @@
+/* eslint-disable @typescript-eslint/only-throw-error */
 import {
-  Controller, Get, Post, Put, Delete,
-  Param, Query, Body,
-  ParseIntPipe, HttpCode, HttpStatus,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Query,
+  Body,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { AuctionCommandService } from '../../../../application/service/auction-command.service';
-import { AuctionQueryService }   from '../../../../application/service/auction-query.service';
-import { CreateAuctionDto }      from '../../../../application/dto/in/create-auction.dto';
-import { UpdateAuctionDto }      from '../../../../application/dto/in/update-auction.dto';
-import { ListAuctionFilterDto }  from '../../../../application/dto/in/list-auction-filter.dto';
-import { AuctionResponseDto }    from '../../../../application/dto/out/auction-response.dto';
+import { AuctionQueryService } from '../../../../application/service/auction-query.service';
+import { CreateAuctionDto } from '../../../../application/dto/in/create-auction.dto';
+import { UpdateAuctionDto } from '../../../../application/dto/in/update-auction.dto';
+import { ListAuctionFilterDto } from '../../../../application/dto/in/list-auction-filter.dto';
+import { AuctionResponseDto } from '../../../../application/dto/out/auction-response.dto';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('auctions')
 export class AuctionController {
   constructor(
     private readonly commandService: AuctionCommandService,
-    private readonly queryService:   AuctionQueryService,
+    private readonly queryService: AuctionQueryService,
   ) {}
 
-  /** GET /auctions */
   @Get()
+  @Roles('CREAR_REMATES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async list(@Query() filters: ListAuctionFilterDto): Promise<{
     items: AuctionResponseDto[];
     total: number;
-    page:  number;
+    page: number;
     limit: number;
   }> {
     return this.queryService.list(filters);
   }
 
-  /** GET /auctions/:id */
   @Get(':id')
-  async getById(@Param('id', ParseIntPipe) id: number): Promise<AuctionResponseDto> {
+  @Roles('CREAR_REMATES', 'ADMINISTRADOR', 'ADMINISTRACION')
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AuctionResponseDto> {
     const dto = await this.queryService.findById(id);
-    if (!dto) throw { status: HttpStatus.NOT_FOUND, message: `Auction not found: ${id}` };
+    if (!dto)
+      throw {
+        status: HttpStatus.NOT_FOUND,
+        message: `Auction not found: ${id}`,
+      };
     return dto;
   }
 
-  /** POST /auctions */
   @Post()
+  @Roles('CREAR_REMATES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async create(@Body() dto: CreateAuctionDto): Promise<AuctionResponseDto> {
     return this.commandService.create(dto);
   }
 
-  /** PUT /auctions/:id */
   @Put(':id')
+  @Roles('CREAR_REMATES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAuctionDto,
@@ -51,23 +71,27 @@ export class AuctionController {
     return this.commandService.update(id, dto as any);
   }
 
-  /** POST /auctions/:id/finalize — sin stock restante, remate terminado */
   @Post(':id/finalize')
   @HttpCode(HttpStatus.OK)
-  async finalize(@Param('id', ParseIntPipe) id: number): Promise<AuctionResponseDto> {
+  @Roles('CREAR_REMATES', 'ADMINISTRADOR', 'ADMINISTRACION')
+  async finalize(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AuctionResponseDto> {
     return this.commandService.finalize(id);
   }
 
-  /** POST /auctions/:id/cancel — cancela y devuelve stock al almacén */
   @Post(':id/cancel')
   @HttpCode(HttpStatus.OK)
-  async cancel(@Param('id', ParseIntPipe) id: number): Promise<AuctionResponseDto> {
+  @Roles('CREAR_REMATES', 'ADMINISTRADOR', 'ADMINISTRACION')
+  async cancel(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AuctionResponseDto> {
     return this.commandService.cancel(id);
   }
 
-  /** DELETE /auctions/:id */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Roles('CREAR_REMATES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.commandService.delete(id);
   }

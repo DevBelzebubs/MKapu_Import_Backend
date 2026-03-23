@@ -1,11 +1,31 @@
-import { Controller, Get, Put, Body, Inject, Post, UseInterceptors, UploadedFile } from '@nestjs/common';
-import { GET_EMPRESA_USE_CASE, GetEmpresaPort } from '../../../../domain/ports/in/get-empresa.port';
-import { UPDATE_EMPRESA_USE_CASE, UpdateEmpresaPort } from '../../../../domain/ports/in/update-empresa.port';
+import {
+  Controller,
+  Get,
+  Put,
+  Body,
+  Inject,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  GET_EMPRESA_USE_CASE,
+  GetEmpresaPort,
+} from '../../../../domain/ports/in/get-empresa.port';
+import {
+  UPDATE_EMPRESA_USE_CASE,
+  UpdateEmpresaPort,
+} from '../../../../domain/ports/in/update-empresa.port';
 import { UpdateEmpresaDto } from '../../../../application/dto/in/update-empresa.dto';
 import { EmpresaMapper } from '../../../../application/mapper/empresa.mapper';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from '../../../cloudinary/cloudinary.service';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('empresa')
 export class EmpresaController {
   constructor(
@@ -17,21 +37,33 @@ export class EmpresaController {
   ) {}
 
   @Get()
+  @Roles(
+    'ADMINISTRACION_PRINCIPAL',
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'CREAR_COTIZACIONES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async get() {
     const empresa = await this.getEmpresa.execute();
     return EmpresaMapper.toResponse(empresa);
   }
 
   @Put()
+  @Roles('ADMINISTRACION_PRINCIPAL', 'ADMINISTRADOR', 'ADMINISTRACION')
   async update(@Body() dto: UpdateEmpresaDto) {
     const empresa = await this.updateEmpresa.execute(dto);
     return EmpresaMapper.toResponse(empresa);
   }
 
   @Post('logo')
-  @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 2 * 1024 * 1024 },  
-  }))
+  @Roles('ADMINISTRACION_PRINCIPAL', 'ADMINISTRADOR', 'ADMINISTRACION')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 2 * 1024 * 1024 },
+    }),
+  )
   async uploadLogo(@UploadedFile() file: Express.Multer.File) {
     return this.cloudinaryService.uploadLogo(file);
   }

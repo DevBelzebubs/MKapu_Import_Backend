@@ -1,8 +1,3 @@
-/* eslint-disable prettier/prettier */
-/* ============================================
-   administration/src/core/headquarters/infrastructure/controllers/headquarters-rest.controller.ts
-   ============================================ */
-
 import {
   Body,
   Controller,
@@ -31,9 +26,10 @@ import { ListHeadquartersFilterDto } from '../../../../application/dto/in/list-h
 import { HeadquartersListResponse } from '../../../../application/dto/out/headquarters-list-response';
 import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('headquarters')
-
 export class HeadquarterRestController {
   constructor(
     @Inject('IHeadquartersQueryPort')
@@ -45,6 +41,7 @@ export class HeadquarterRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CREAR_SEDES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async registerHeadquarter(
     @Body() registerDto: RegisterHeadquartersDto,
   ): Promise<HeadquartersResponseDto> {
@@ -57,6 +54,7 @@ export class HeadquarterRestController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_SEDES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async updateHeadquarter(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Omit<UpdateHeadquartersDto, 'id_sede'>,
@@ -75,6 +73,7 @@ export class HeadquarterRestController {
 
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_SEDES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async changeHeadquarterStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() changeStatusDto: { status: boolean },
@@ -91,6 +90,7 @@ export class HeadquarterRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_SEDES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async deleteHeadquarter(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<HeadquartersDeletedResponseDto> {
@@ -102,11 +102,25 @@ export class HeadquarterRestController {
   }
 
   @Get(':id')
+  @Roles(
+    'CREAR_SEDES',
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getHeadquarterById(@Param('id') id: number) {
     return await this.headquartersQueryService.getHeadquarterById(id);
   }
 
   @Get()
+  @Roles(
+    'CREAR_SEDES',
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async listHeadquarters(
     @Query() filters: ListHeadquartersFilterDto,
   ): Promise<HeadquartersListResponse> {

@@ -24,9 +24,10 @@ import {
 } from '../../../../application/dto/out';
 import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('roles')
-//@UseGuards(RoleGuard)
-//@Roles('Administrador')
 export class RoleRestController {
   constructor(
     @Inject('IRoleCommandPort')
@@ -35,6 +36,7 @@ export class RoleRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async registerRole(
     @Body() registerDto: RegisterRoleDto,
   ): Promise<RoleResponseDto> {
@@ -43,6 +45,7 @@ export class RoleRestController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async updateRole(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Omit<UpdateRoleDto, 'id_rol'>,
@@ -56,6 +59,7 @@ export class RoleRestController {
 
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async changeRoleStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() statusDto: { activo: boolean },
@@ -69,6 +73,7 @@ export class RoleRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async deleteRole(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<RoleDeletedResponseDto> {
@@ -77,6 +82,7 @@ export class RoleRestController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async getRoleById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<RoleResponseDto> {
@@ -85,6 +91,7 @@ export class RoleRestController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async getAllRoles(): Promise<RoleResponseDto[]> {
     return this.roleCommandService.getAllRoles();
   }

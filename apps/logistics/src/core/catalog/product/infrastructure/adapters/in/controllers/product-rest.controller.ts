@@ -12,6 +12,7 @@ import {
   Req,
   BadRequestException,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 
@@ -27,7 +28,11 @@ import {
   ProductAutocompleteQueryDto,
 } from '../../../../application/dto/in';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('products')
 export class ProductRestController {
   constructor(
@@ -37,36 +42,67 @@ export class ProductRestController {
   ) {}
 
   @Post()
+  @Roles('CREAR_PRODUCTOS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async register(@Body() dto: RegisterProductDto) {
     return this.commandService.registerProduct(dto);
   }
 
   @Put()
+  @Roles('CREAR_PRODUCTOS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async update(@Body() dto: UpdateProductDto) {
     return this.commandService.updateProduct(dto);
   }
 
   @Put('prices')
+  @Roles('CREAR_PRODUCTOS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async updatePrices(@Body() dto: UpdateProductPricesDto) {
     return this.commandService.updateProductPrices(dto);
   }
 
   @Put('status')
+  @Roles('CREAR_PRODUCTOS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async changeStatus(@Body() dto: ChangeProductStatusDto) {
     return this.commandService.changeProductStatus(dto);
   }
 
   @Delete(':id')
+  @Roles('CREAR_PRODUCTOS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.commandService.deleteProduct(id);
   }
 
   @Get()
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async list(@Query() filters: ListProductFilterDto) {
     return this.queryService.listProducts(filters);
   }
 
   @Get('productos_stock')
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async listProductsStock(
     @Req() req: Request,
     @Query('id_sede') id_sede?: string,
@@ -106,6 +142,19 @@ export class ProductRestController {
   }
 
   @Get('autocomplete')
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async autocomplete(
     @Query('search') search?: string,
     @Query('id_sede') id_sede?: string,
@@ -128,6 +177,13 @@ export class ProductRestController {
   }
 
   @Get('ventas/autocomplete')
+  @Roles(
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async autocompleteVentas(
     @Query('search') search?: string,
     @Query('id_sede') id_sede?: string,
@@ -146,16 +202,23 @@ export class ProductRestController {
       id_categoria: id_categoria ? Number(id_categoria) : undefined,
     };
 
-     return this.queryService.autocompleteProductsVentas(dto);
+    return this.queryService.autocompleteProductsVentas(dto);
   }
 
   @Get('ventas/stock')
+  @Roles(
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async stockVentas(
     @Query('id_sede') id_sede?: string,
     @Query('search') search?: string,
     @Query('id_categoria') id_categoria?: string,
-    @Query('page') page?: string, // ← NUEVO
-    @Query('size') size?: string, // ← NUEVO
+    @Query('page') page?: string,
+    @Query('size') size?: string,
   ) {
     if (!id_sede || Number.isNaN(Number(id_sede))) {
       throw new BadRequestException('id_sede es obligatorio. Ej: ?id_sede=1');
@@ -172,7 +235,21 @@ export class ProductRestController {
 
     return this.queryService.getProductsStockVentas(dto, pageNum, sizeNum);
   }
+
   @Get(':id_producto/stock')
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async detailWithStock(
     @Param('id_producto', ParseIntPipe) id_producto: number,
     @Query('id_sede') id_sede?: string,
@@ -189,6 +266,19 @@ export class ProductRestController {
   }
 
   @Get('code/:codigo/stock')
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async detailWithStockByCode(
     @Param('codigo') codigo: string,
     @Query('id_sede') id_sede?: string,
@@ -203,7 +293,6 @@ export class ProductRestController {
       Number(sede),
     );
 
-    // si por alguna razón el service retornara null, aquí lo convertimos en 404
     if (!result) {
       throw new NotFoundException(`Producto no encontrado: ${codigo}`);
     }
@@ -212,6 +301,19 @@ export class ProductRestController {
   }
 
   @Get('code/:codigo')
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getByCode(@Param('codigo') codigo: string) {
     const product = await this.queryService.getProductByCode(codigo);
     if (!product)
@@ -220,6 +322,19 @@ export class ProductRestController {
   }
 
   @Get('category/:id_categoria')
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getByCategory(
     @Param('id_categoria', ParseIntPipe) id_categoria: number,
   ) {
@@ -227,6 +342,19 @@ export class ProductRestController {
   }
 
   @Get('categorias-con-stock')
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async categoriasConStock(@Query('id_sede') id_sede?: string) {
     if (!id_sede || Number.isNaN(Number(id_sede))) {
       throw new BadRequestException('id_sede es obligatorio. Ej: ?id_sede=1');
@@ -235,6 +363,19 @@ export class ProductRestController {
   }
 
   @Get(':id')
+  @Roles(
+    'CREAR_PRODUCTOS',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_TRANSFERENCIA',
+    'CREAR_DESPACHO',
+    'CREAR_REMISION',
+    'CONTEO_INVENTARIO',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getById(@Param('id', ParseIntPipe) id: number) {
     const product = await this.queryService.getProductById(id);
     if (!product) throw new NotFoundException(`Producto no encontrado: ${id}`);
@@ -248,15 +389,12 @@ export class ProductRestController {
         `[TCP ADMIN] Recibida petición de pesos para ${ids.length} productos`,
       );
 
-      // Llamamos al service que consulta la base de datos
       return await this.productQueryService.getProductsWeightsByIds(ids);
     } catch (error) {
       console.error('[TCP ADMIN] Error al procesar pesos:', error.message);
-      return []; // Devolvemos array vacío en caso de error para no romper Logística
+      return [];
     }
   }
-
-  // apps/logistics/src/core/catalog/product/infrastructure/adapters/in/controllers/product-rest.controller.ts
 
   @MessagePattern({ cmd: 'get_products_codigo_by_ids' })
   async getProductsCodigoByIds(@Payload() ids: number[]) {

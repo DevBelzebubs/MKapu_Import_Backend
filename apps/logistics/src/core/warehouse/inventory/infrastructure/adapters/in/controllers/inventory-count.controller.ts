@@ -9,6 +9,7 @@ import {
   Post,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { InventoryCountCommandService } from '../../../../application/service/count/inventory-count-command.service';
@@ -20,7 +21,11 @@ import {
   IniciarConteoDto,
 } from '../../../../application/dto/in/inventory-count-dto-in';
 import { ListInventoryCountFilterDto } from '../../../../application/dto/in/list-inventory-count-filter.dto';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('conteo-inventario')
 export class InventoryCountController {
   constructor(
@@ -29,16 +34,19 @@ export class InventoryCountController {
   ) {}
 
   @Post()
+  @Roles('CONTEO_INVENTARIO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async iniciar(@Body() dto: IniciarConteoDto) {
     return await this.countCommandService.initInventoryCount(dto);
   }
 
   @Get()
+  @Roles('CONTEO_INVENTARIO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async listarConteos(@Query() filter: ListInventoryCountFilterDto) {
     return await this.countQueryService.listarConteosPorSede(filter);
   }
 
   @Patch('detalle/:idDetalle')
+  @Roles('CONTEO_INVENTARIO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async actualizarDetalle(
     @Param('idDetalle') idDetalle: number,
     @Body() dto: ActualizarDetalleConteoDto,
@@ -47,6 +55,7 @@ export class InventoryCountController {
   }
 
   @Patch(':idConteo/finalizar')
+  @Roles('CONTEO_INVENTARIO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async finalizar(
     @Param('idConteo') idConteo: number,
     @Body() dto: FinalizarConteoDto,
@@ -55,11 +64,13 @@ export class InventoryCountController {
   }
 
   @Get(':idConteo')
+  @Roles('CONTEO_INVENTARIO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async obtenerDetalle(@Param('idConteo') idConteo: number) {
     return await this.countQueryService.obtenerConteoConDetalles(idConteo);
   }
 
   @Get(':id/exportar/excel')
+  @Roles('CONTEO_INVENTARIO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async exportarExcel(@Param('id') id: number, @Res() res: Response) {
     try {
       const buffer = await this.countQueryService.exportarConteoExcel(id);
@@ -68,7 +79,7 @@ export class InventoryCountController {
         'Content-Type':
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename=Conteo_Inventario_${id}.xlsx`,
-        'Content-Length': buffer.byteLength,
+        'Content-Length': buffer.byteLength.toString(),
       });
 
       res.end(buffer);
@@ -78,6 +89,7 @@ export class InventoryCountController {
   }
 
   @Get(':id/exportar/pdf')
+  @Roles('CONTEO_INVENTARIO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async exportarPdf(@Param('id') id: number, @Res() res: Response) {
     try {
       const buffer = await this.countQueryService.exportarConteoPdf(id);
@@ -85,7 +97,7 @@ export class InventoryCountController {
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename=Conteo_Inventario_${id}.pdf`,
-        'Content-Length': buffer.byteLength,
+        'Content-Length': buffer.byteLength.toString(),
       });
 
       res.end(buffer);

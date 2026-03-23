@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ISedeAlmacenCommandPort,
@@ -20,7 +21,11 @@ import {
   SedeAlmacenListResponseDto,
   SedeAlmacenResponseDto,
 } from '../../../../application/dto/out';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('sede-almacen')
 export class SedeAlmacenRestController {
   constructor(
@@ -32,6 +37,7 @@ export class SedeAlmacenRestController {
 
   @Post('assign')
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CREAR_SEDES', 'CREAR_ALMACEN', 'ADMINISTRADOR', 'ADMINISTRACION')
   async assignWarehouseToSede(
     @Body() dto: AssignWarehouseToSedeDto,
   ): Promise<SedeAlmacenResponseDto> {
@@ -40,6 +46,7 @@ export class SedeAlmacenRestController {
 
   @Put(':id_almacen/sede')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_SEDES', 'CREAR_ALMACEN', 'ADMINISTRADOR', 'ADMINISTRACION')
   async reassignWarehouse(
     @Param('id_almacen', ParseIntPipe) id_almacen: number,
     @Body() body: { id_sede: number },
@@ -52,6 +59,7 @@ export class SedeAlmacenRestController {
 
   @Delete(':id_almacen/sede')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Roles('CREAR_SEDES', 'CREAR_ALMACEN', 'ADMINISTRADOR', 'ADMINISTRACION')
   async unassignWarehouse(
     @Param('id_almacen', ParseIntPipe) id_almacen: number,
   ): Promise<void> {
@@ -59,6 +67,15 @@ export class SedeAlmacenRestController {
   }
 
   @Get('sede/:id_sede')
+  @Roles(
+    'CREAR_SEDES',
+    'CREAR_ALMACEN',
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'CREAR_MOV_INVENTARIO',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async listWarehousesBySede(
     @Param('id_sede', ParseIntPipe) id_sede: number,
   ): Promise<SedeAlmacenListResponseDto> {
@@ -66,6 +83,15 @@ export class SedeAlmacenRestController {
   }
 
   @Get('almacen/:id_almacen')
+  @Roles(
+    'CREAR_SEDES',
+    'CREAR_ALMACEN',
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'CREAR_MOV_INVENTARIO',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getAssignmentByWarehouse(
     @Param('id_almacen', ParseIntPipe) id_almacen: number,
   ): Promise<SedeAlmacenResponseDto> {

@@ -11,6 +11,7 @@ import {
   Inject,
   Get,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   IStoreCommandPort,
@@ -27,7 +28,11 @@ import {
   StoreListResponse,
   StoreResponseDto,
 } from '../../../../application/dto/out';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('stores')
 export class StoreRestController {
   constructor(
@@ -39,6 +44,7 @@ export class StoreRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CREAR_ALMACEN', 'ADMINISTRADOR', 'ADMINISTRACION')
   async registerStore(
     @Body() registerDto: RegisterStoreDto,
   ): Promise<StoreResponseDto> {
@@ -47,6 +53,7 @@ export class StoreRestController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_ALMACEN', 'ADMINISTRADOR', 'ADMINISTRACION')
   async updateStore(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Omit<UpdateStoreDto, 'id_almacen'>,
@@ -60,6 +67,7 @@ export class StoreRestController {
 
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_ALMACEN', 'ADMINISTRADOR', 'ADMINISTRACION')
   async changeStoreStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() statusDto: { activo: boolean },
@@ -73,6 +81,7 @@ export class StoreRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_ALMACEN', 'ADMINISTRADOR', 'ADMINISTRACION')
   async deleteStore(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<StoreDeletedResponseDto> {
@@ -80,11 +89,27 @@ export class StoreRestController {
   }
 
   @Get(':id')
+  @Roles(
+    'CREAR_ALMACEN',
+    'VER_MOVIMIENTOS',
+    'CREAR_MOV_INVENTARIO',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getStore(@Param('id', ParseIntPipe) id: number) {
     return this.storeQueryService.getStoreById(id);
   }
 
   @Get()
+  @Roles(
+    'CREAR_ALMACEN',
+    'VER_MOVIMIENTOS',
+    'CREAR_MOV_INVENTARIO',
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async listStores(
     @Query() filters: ListStoreFilterDto,
   ): Promise<StoreListResponse> {

@@ -11,6 +11,7 @@ import {
   Inject,
   Get,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ICategoryCommandPort,
@@ -27,7 +28,11 @@ import {
   CategoryListResponse,
   CategoryResponseDto,
 } from '../../../../application/dto/out';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('categories')
 export class CategoryRestController {
   constructor(
@@ -39,6 +44,7 @@ export class CategoryRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CREAR_CATEGORIAS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async registerCategory(
     @Body() registerDto: RegisterCategoryDto,
   ): Promise<CategoryResponseDto> {
@@ -47,6 +53,7 @@ export class CategoryRestController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_CATEGORIAS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async updateCategory(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Omit<UpdateCategoryDto, 'id_categoria'>,
@@ -60,6 +67,7 @@ export class CategoryRestController {
 
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_CATEGORIAS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async changeCategoryStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() statusDto: { activo: boolean },
@@ -73,6 +81,7 @@ export class CategoryRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_CATEGORIAS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async deleteCategory(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<CategoryDeletedResponseDto> {
@@ -80,11 +89,23 @@ export class CategoryRestController {
   }
 
   @Get(':id')
+  @Roles(
+    'CREAR_CATEGORIAS',
+    'CREAR_PRODUCTOS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getCategory(@Param('id', ParseIntPipe) id: number) {
     return this.categoryQueryService.getCategoryById(id);
   }
 
   @Get()
+  @Roles(
+    'CREAR_CATEGORIAS',
+    'CREAR_PRODUCTOS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async listCategories(
     @Query() filters: ListCategoryFilterDto,
   ): Promise<CategoryListResponse> {

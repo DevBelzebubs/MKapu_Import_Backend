@@ -1,7 +1,16 @@
 import {
-  Controller, Get, Post, Delete, Patch,
-  Body, Param, ParseIntPipe,
-  HttpCode, HttpStatus, Inject,
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Patch,
+  Body,
+  Param,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  UseGuards,
 } from '@nestjs/common';
 import {
   IRolePermissionCommandPort,
@@ -12,7 +21,11 @@ import {
   RemovePermissionFromRoleDto,
   SyncPermissionsDto,
 } from '../../../../application/dto/in';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('role-permissions')
 export class RolePermissionRestController {
   constructor(
@@ -22,48 +35,44 @@ export class RolePermissionRestController {
     private readonly qry: IRolePermissionQueryPort,
   ) {}
 
-  // ── QUERIES ───────────────────────────────────────────────────────
-
-  /** GET /role-permissions — todos los roles con sus permisos */
   @Get()
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   getAllRolesWithPermissions() {
     return this.qry.getAllRolesWithPermissions();
   }
 
-  /** GET /role-permissions/role/:roleId — permisos de un rol */
   @Get('role/:roleId')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   getPermissionsByRole(@Param('roleId', ParseIntPipe) roleId: number) {
     return this.qry.getPermissionsByRole(roleId);
   }
 
-  /** GET /role-permissions/permission/:permId — roles que tienen un permiso */
   @Get('permission/:permId')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   getRolesByPermission(@Param('permId', ParseIntPipe) permId: number) {
     return this.qry.getRolesByPermission(permId);
   }
 
-  // ── COMMANDS ──────────────────────────────────────────────────────
-
-  /** POST /role-permissions/assign — asignar permisos (agrega sin borrar) */
   @Post('assign')
   @HttpCode(HttpStatus.CREATED)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   assignPermissions(@Body() dto: AssignPermissionsDto) {
     return this.cmd.assignPermissions(dto);
   }
 
-  /** PATCH /role-permissions/sync — sync completo (reemplaza todos) */
   @Patch('sync')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   syncPermissions(@Body() dto: SyncPermissionsDto) {
     return this.cmd.syncPermissions(dto.roleId, dto.permissionIds);
   }
 
-  /** DELETE /role-permissions/remove — quitar un permiso de un rol */
   @Delete('remove')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   removePermission(@Body() dto: RemovePermissionFromRoleDto) {
     return this.cmd.removePermissionFromRole(dto);
   }

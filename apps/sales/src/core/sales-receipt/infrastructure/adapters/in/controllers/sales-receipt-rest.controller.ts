@@ -19,6 +19,7 @@ import {
   NotFoundException,
   BadRequestException,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { MessagePattern, Payload } from '@nestjs/microservices';
@@ -47,7 +48,11 @@ import {
   SalesReceiptPdfData,
 } from '../../../../utils/sales-receipt-pdf.util';
 import { buildSalesReceiptThermalPdf } from '../../../../utils/sales-receipt-thermal.util';
+import { JwtAuthGuard } from '@app/common/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from '@app/common/infrastructure/guard/roles.guard';
+import { Roles } from '@app/common/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('receipts')
 export class SalesReceiptRestController {
   constructor(
@@ -180,6 +185,7 @@ export class SalesReceiptRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async registerReceipt(
     @Body() registerDto: RegisterSalesReceiptDto,
   ): Promise<SalesReceiptResponseDto> {
@@ -188,6 +194,7 @@ export class SalesReceiptRestController {
 
   @Put(':id/emit')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async emitReceipt(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { paymentTypeId?: number },
@@ -197,6 +204,7 @@ export class SalesReceiptRestController {
 
   @Put(':id/annul')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async annulReceipt(
     @Param('id', ParseIntPipe) id: number,
     @Body('reason') reason: string,
@@ -208,6 +216,7 @@ export class SalesReceiptRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async deleteReceipt(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SalesReceiptDeletedResponseDto> {
@@ -217,28 +226,62 @@ export class SalesReceiptRestController {
   // ── Consultas estáticas ────────────────────────────────────────────
 
   @Get('payment-types')
+  @Roles(
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'CREAR_COTIZACIONES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getPaymentTypes() {
     return this.paymentTypeRepo.find({ order: { id: 'ASC' } });
   }
 
   @Get('currencies')
+  @Roles(
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'CREAR_COTIZACIONES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getCurrencies() {
     return this.currencyRepo.find({ order: { codigo: 'ASC' } });
   }
 
   @Get('sale-types')
   @HttpCode(HttpStatus.OK)
+  @Roles(
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'CREAR_COTIZACIONES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getAllSaleTypes(): Promise<SaleTypeResponseDto[]> {
     return this.receiptQueryService.getAllSaleTypes();
   }
 
   @Get('receipt-types')
   @HttpCode(HttpStatus.OK)
+  @Roles(
+    'CREAR_VENTA',
+    'VER_VENTAS',
+    'CREAR_COTIZACIONES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getAllReceiptTypes(): Promise<ReceiptTypeResponseDto[]> {
     return this.receiptQueryService.getAllReceiptTypes();
   }
 
   @Get('kpi/semanal')
+  @Roles(
+    'VER_DASHBOARD_VENTAS',
+    'VER_REPORTES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getKpiSemanal(@Query('sedeId') sedeId?: string) {
     return this.receiptQueryService.getKpiSemanal(
       sedeId ? Number(sedeId) : undefined,
@@ -246,6 +289,7 @@ export class SalesReceiptRestController {
   }
 
   @Get('historial')
+  @Roles('VER_VENTAS', 'CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async listHistorial(
     @Query('status') status?: string,
     @Query('customerId') customerId?: string,
@@ -274,6 +318,7 @@ export class SalesReceiptRestController {
   }
 
   @Get('serie/:serie')
+  @Roles('VER_VENTAS', 'CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async getReceiptsBySerie(
     @Param('serie') serie: string,
   ): Promise<SalesReceiptListResponse> {
@@ -281,6 +326,7 @@ export class SalesReceiptRestController {
   }
 
   @Get()
+  @Roles('VER_VENTAS', 'CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async listReceipts(
     @Query() filters: ListSalesReceiptFilterDto,
   ): Promise<SalesReceiptListResponse> {
@@ -290,6 +336,7 @@ export class SalesReceiptRestController {
   // ── PDFs ───────────────────────────────────────────────────────────
 
   @Get(':id/detalle')
+  @Roles('VER_VENTAS', 'CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async getDetalleCompleto(
     @Param('id', ParseIntPipe) id: number,
     @Query('historialPage') historialPage?: string,
@@ -304,23 +351,25 @@ export class SalesReceiptRestController {
   }
 
   @Get(':id/pdf')
+  @Roles('VER_VENTAS', 'CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async downloadReceiptPdf(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
   ): Promise<void> {
     const pdfData = await this.buildPdfData(id);
-    const buffer = await buildSalesReceiptPdf(pdfData); // Solo 1 parámetro
+    const buffer = await buildSalesReceiptPdf(pdfData);
 
     const filename = `comprobante-${pdfData.serie}-${String(pdfData.numero).padStart(8, '0')}.pdf`;
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}"`,
-      'Content-Length': buffer.length,
+      'Content-Length': buffer.length.toString(),
     });
     res.end(buffer);
   }
 
   @Get(':id/thermal')
+  @Roles('VER_VENTAS', 'CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async downloadThermalVoucher(
     @Param('id', ParseIntPipe) id: number,
     @Query('copia') copia: string,
@@ -334,13 +383,14 @@ export class SalesReceiptRestController {
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="${filename}"`,
-      'Content-Length': buffer.length,
+      'Content-Length': buffer.length.toString(),
     });
     res.end(buffer);
   }
 
   @Get('correlativo/:correlativo')
   @HttpCode(HttpStatus.OK)
+  @Roles('VER_VENTAS', 'CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async findByCorrelativo(@Param('correlativo') correlativo: string) {
     const cleanCorrelativo = decodeURIComponent(correlativo)
       .trim()
@@ -359,6 +409,7 @@ export class SalesReceiptRestController {
   }
 
   @Get(':id')
+  @Roles('VER_VENTAS', 'CREAR_VENTA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async getReceipt(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SalesReceiptResponseDto | null> {

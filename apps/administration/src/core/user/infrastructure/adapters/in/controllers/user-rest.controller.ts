@@ -31,15 +31,10 @@ import {
 } from '../../../../application/dto/out';
 import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
-import { CuentaUsuarioOrmEntity } from '../../../entity/cuenta-usuario-orm.entity';
-import { CuentaRolOrmEntity } from '../../../entity/cuenta-rol-orm.entity';
-import { RoleOrmEntity } from '../../../../../role/infrastructure/entity/role-orm.entity';
-import { HeadquartersOrmEntity } from '../../../../../headquarters/infrastructure/entity/headquarters-orm.entity';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
 
-
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('users')
-//@UseGuards(RoleGuard)
-//@Roles('Administrador')
 export class UserRestController {
   constructor(
     @Inject('IUserQueryPort')
@@ -51,6 +46,7 @@ export class UserRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async registerUser(
     @Body() registerDto: RegisterUserDto,
   ): Promise<UserResponseDto> {
@@ -58,8 +54,10 @@ export class UserRestController {
     this.userGateway.notifyUserCreated(newUser);
     return newUser;
   }
+
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Omit<UpdateUserDto, 'id_usuario'>,
@@ -75,6 +73,7 @@ export class UserRestController {
 
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async changeUserStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() statusDto: { activo: boolean },
@@ -93,6 +92,7 @@ export class UserRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async deleteUser(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<UserDeletedResponseDto> {
@@ -100,23 +100,29 @@ export class UserRestController {
     this.userGateway.notifyUserDeleted(id);
     return deletedUser;
   }
-  
+
   @Get()
-  async listUsers(@Query() filters: ListUserFilterDto): Promise<UserListResponse> {
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
+  async listUsers(
+    @Query() filters: ListUserFilterDto,
+  ): Promise<UserListResponse> {
     return this.userQueryService.listUsers(filters);
   }
 
   @Get('all')
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async getAllUsers(): Promise<UserResponseDto[]> {
     return this.userQueryService.getAllUsers();
   }
 
   @Get(':id')
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async getUser(@Param('id') id: number) {
     return this.userQueryService.getUserById(id);
   }
 
   @Get(':id/full')
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async getUserWithAccount(@Param('id') id: number) {
     return await this.userQueryService.getUserWithAccount(id);
   }

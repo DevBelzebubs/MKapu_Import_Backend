@@ -13,6 +13,7 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common';
 import type { TransferResponseDto } from '../../../../application/dto/out/transfer-response.dto';
 import { TransferResponseMapper } from '../../../../application/mapper/transfer-response.mapper';
@@ -29,7 +30,11 @@ import {
   TransferNotificationResponseDto,
 } from '../../../../application/dto/out';
 import { TransferRequestMapper } from '../../../../application/mapper/transfer-request.mapper';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('warehouse/transfer')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class TransferRestController {
@@ -40,6 +45,7 @@ export class TransferRestController {
 
   @Post('request')
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CREAR_TRANSFERENCIA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async requestTransfer(
     @Body() dto: RequestTransferDto,
     @Headers('x-transfer-mode') transferModeHeader?: string,
@@ -52,6 +58,7 @@ export class TransferRestController {
   }
 
   @Patch(':id/approve')
+  @Roles('CREAR_TRANSFERENCIA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async approveTransfer(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ApproveTransferDto,
@@ -61,6 +68,7 @@ export class TransferRestController {
   }
 
   @Patch(':id/reject')
+  @Roles('CREAR_TRANSFERENCIA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async rejectTransfer(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RejectTransferDto,
@@ -70,6 +78,7 @@ export class TransferRestController {
   }
 
   @Patch(':id/confirm-receipt')
+  @Roles('CREAR_TRANSFERENCIA', 'ADMINISTRADOR', 'ADMINISTRACION')
   async confirmReceipt(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ConfirmReceiptTransferDto,
@@ -79,6 +88,12 @@ export class TransferRestController {
   }
 
   @Get('headquarters/:hqId')
+  @Roles(
+    'CREAR_TRANSFERENCIA',
+    'VER_MOVIMIENTOS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getTransfersByHeadquarters(
     @Param('hqId') hqId: string,
   ): Promise<TransferResponseDto[]> {
@@ -90,6 +105,12 @@ export class TransferRestController {
   }
 
   @Get()
+  @Roles(
+    'CREAR_TRANSFERENCIA',
+    'VER_MOVIMIENTOS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getAllTransfers(
     @Query() query: ListTransferQueryDto,
   ): Promise<TransferListPaginatedResponseDto> {
@@ -97,6 +118,12 @@ export class TransferRestController {
   }
 
   @Get('notifications')
+  @Roles(
+    'CREAR_TRANSFERENCIA',
+    'VER_MOVIMIENTOS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getTransferNotifications(
     @Query() query: ListTransferNotificationQueryDto,
   ): Promise<TransferNotificationResponseDto[]> {
@@ -104,6 +131,12 @@ export class TransferRestController {
   }
 
   @Get(':id')
+  @Roles(
+    'CREAR_TRANSFERENCIA',
+    'VER_MOVIMIENTOS',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getTransferById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<TransferByIdResponseDto> {

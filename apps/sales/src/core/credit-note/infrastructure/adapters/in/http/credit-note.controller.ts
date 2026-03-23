@@ -29,35 +29,35 @@ import { AnnulCreditNoteDto } from '../../../../application/dto/in/annul-credit-
 import { ListCreditNoteFilterDto } from '../../../../application/dto/in/list-credit-note-filter.dto';
 import { CreateCreditNoteRequestDto } from '../../../../application/dto/in/create-credit-note-request.dto';
 import { JwtAuthGuard } from '@app/common/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from '@app/common/infrastructure/guard/roles.guard';
+import { Roles } from '@app/common/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('credit-note')
 export class CreditNoteController {
   constructor(
     @Inject('IRegisterCreditNoteCommandPort')
     private readonly registerCreditNote: IRegisterCreditNoteCommandPort,
-
     @Inject('IAnnulCreditNoteCommandPort')
     private readonly annulCreditNote: IAnnulCreditNoteCommandPort,
-
     @Inject('IGetCreditNoteDetailQueryPort')
     private readonly getCreditNoteDetal: IGetCreditNoteDetailQueryPort,
-
     @Inject('IListCreditNoteQueryPort')
     private readonly listCreditNotes: IListCreditNoteQueryPort,
-
     @Inject('IExportCreditNoteQueryPort')
     private readonly exportCreditNotes: IExportCreditNoteQueryPort,
   ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(JwtAuthGuard)
+  @Roles('CREAR_NOTA_CREDITO', 'CREAR_NC', 'ADMINISTRADOR', 'ADMINISTRACION')
   async create(@Body() dto: CreateCreditNoteRequestDto, @Req() req: any) {
     dto.userRefId = req.user?.id || req.user?.id_usuario || 1;
     return this.registerCreditNote.execute(dto);
   }
 
   @Post(':id/annul')
+  @Roles('CREAR_NOTA_CREDITO', 'CREAR_NC', 'ADMINISTRADOR', 'ADMINISTRACION')
   async annul(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AnnulCreditNoteDto,
@@ -67,11 +67,13 @@ export class CreditNoteController {
   }
 
   @Get()
+  @Roles('VER_NOTAS_CREDITO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async list(@Query() filters: ListCreditNoteFilterDto) {
     return this.listCreditNotes.execute(filters);
   }
 
   @Get('export')
+  @Roles('VER_NOTAS_CREDITO', 'VER_REPORTES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async export(
     @Query() filters: ListCreditNoteFilterDto,
     @Res() res: Response,
@@ -82,13 +84,14 @@ export class CreditNoteController {
       'Content-Type':
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename=Notas_Credito_${new Date().getTime()}.xlsx`,
-      'Content-Length': buffer.length,
+      'Content-Length': buffer.length.toString(),
     });
 
     res.end(buffer);
   }
 
   @Get(':id')
+  @Roles('VER_NOTAS_CREDITO', 'ADMINISTRADOR', 'ADMINISTRACION')
   async detail(@Param('id', ParseIntPipe) id: number) {
     return this.getCreditNoteDetal.execute(id);
   }

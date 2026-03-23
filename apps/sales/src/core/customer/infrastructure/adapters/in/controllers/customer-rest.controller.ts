@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslnat/no-unsafe-return */
 import {
   Controller,
   Post,
@@ -12,6 +13,7 @@ import {
   Inject,
   Get,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ICustomerCommandPort,
@@ -20,7 +22,6 @@ import {
 import {
   RegisterCustomerDto,
   UpdateCustomerDto,
-  ChangeCustomerStatusDto,
   ListCustomerFilterDto,
 } from '../../../../application/dto/in';
 import {
@@ -29,7 +30,11 @@ import {
   CustomerDeletedResponseDto,
   DocumentTypeResponseDto,
 } from '../../../../application/dto/out';
+import { JwtAuthGuard } from '@app/common/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from '@app/common/infrastructure/guard/roles.guard';
+import { Roles } from '@app/common/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('customers')
 export class CustomerRestController {
   constructor(
@@ -41,12 +46,26 @@ export class CustomerRestController {
 
   @Get('document-types')
   @HttpCode(HttpStatus.OK)
+  @Roles(
+    'CREAR_CLIENTE',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getDocumentTypes(): Promise<DocumentTypeResponseDto[]> {
     return this.customerQueryService.getDocumentTypes();
   }
 
   @Get('document/:documentValue')
   @HttpCode(HttpStatus.OK)
+  @Roles(
+    'CREAR_CLIENTE',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async getCustomerByDocument(
     @Param('documentValue') documentValue: string,
   ): Promise<CustomerResponseDto | null> {
@@ -55,6 +74,13 @@ export class CustomerRestController {
 
   @Get('suggest')
   @HttpCode(HttpStatus.OK)
+  @Roles(
+    'CREAR_CLIENTE',
+    'CREAR_VENTA',
+    'CREAR_COTIZACIONES',
+    'ADMINISTRADOR',
+    'ADMINISTRACION',
+  )
   async suggest(
     @Query('q') q?: string,
     @Query('limit') limit = 5,
@@ -72,6 +98,7 @@ export class CustomerRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CREAR_CLIENTE', 'ADMINISTRADOR', 'ADMINISTRACION')
   async registerCustomer(
     @Body() registerDto: RegisterCustomerDto,
   ): Promise<CustomerResponseDto> {
@@ -80,15 +107,20 @@ export class CustomerRestController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_CLIENTE', 'ADMINISTRADOR', 'ADMINISTRACION')
   async updateCustomer(
     @Param('id') id: string,
     @Body() updateDto: Omit<UpdateCustomerDto, 'customerId'>,
   ): Promise<CustomerResponseDto> {
-    return this.customerCommandService.updateCustomer({ ...updateDto, customerId: id });
+    return this.customerCommandService.updateCustomer({
+      ...updateDto,
+      customerId: id,
+    });
   }
 
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_CLIENTE', 'ADMINISTRADOR', 'ADMINISTRACION')
   async changeCustomerStatus(
     @Param('id') id: string,
     @Body() statusDto: { status: boolean },
@@ -101,6 +133,7 @@ export class CustomerRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_CLIENTE', 'ADMINISTRADOR', 'ADMINISTRACION')
   async deleteCustomer(
     @Param('id') id: string,
   ): Promise<CustomerDeletedResponseDto> {
@@ -108,27 +141,27 @@ export class CustomerRestController {
   }
 
   @Get()
+  @Roles('CREAR_CLIENTE', 'VER_VENTAS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async listCustomers(
-    @Query('page')   page?: string,
-    @Query('limit')  limit?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('status') status?: string,
-    @Query('tipo')   tipo?: string,
+    @Query('tipo') tipo?: string,
   ): Promise<CustomerListResponse> {
-
     let estadoBoolean: boolean | undefined = undefined;
-    if (status === 'true')  estadoBoolean = true;
+    if (status === 'true') estadoBoolean = true;
     if (status === 'false') estadoBoolean = false;
 
     let documentTypeId: number | undefined = undefined;
     if (tipo === 'juridica') documentTypeId = 4;
-    if (tipo === 'natural')  documentTypeId = 2;
+    if (tipo === 'natural') documentTypeId = 2;
 
     const filters: ListCustomerFilterDto = {
-      page:           page  ? Number(page)  : 1,
-      limit:          limit ? Number(limit) : 10,
-      search:         search || undefined,
-      status:         estadoBoolean,
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      search: search || undefined,
+      status: estadoBoolean,
       documentTypeId: documentTypeId,
     };
 
@@ -136,6 +169,7 @@ export class CustomerRestController {
   }
 
   @Get(':id')
+  @Roles('CREAR_CLIENTE', 'VER_VENTAS', 'ADMINISTRADOR', 'ADMINISTRACION')
   async getCustomer(
     @Param('id') id: string,
   ): Promise<CustomerResponseDto | null> {

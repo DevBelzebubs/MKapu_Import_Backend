@@ -26,14 +26,14 @@ import {
 } from '../../../../application/dto/in';
 import {
   PermissionDeletedResponseDto,
-  PermissionListResponse,
   PermissionResponseDto,
 } from '../../../../application/dto/out';
-import { RoleGuard, Roles } from 'libs/common/src';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('permissions')
-//@UseGuards(RoleGuard)
-//@Roles('Administrador')
 export class PermissionRestController {
   constructor(
     @Inject('IPermissionQueryPort')
@@ -45,6 +45,7 @@ export class PermissionRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async registerPermission(
     @Body() registerDto: RegisterPermissionDto,
   ): Promise<PermissionResponseDto> {
@@ -56,6 +57,7 @@ export class PermissionRestController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async updatePermission(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Omit<UpdatePermissionDto, 'id_permiso'>,
@@ -72,6 +74,7 @@ export class PermissionRestController {
 
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async changePermissionStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() statusDto: { activo: boolean },
@@ -90,6 +93,7 @@ export class PermissionRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async deletePermission(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<PermissionDeletedResponseDto> {
@@ -98,12 +102,15 @@ export class PermissionRestController {
     this.permissionGateway.notifyPermissionDeleted(id);
     return deletedPermission;
   }
+
   @Get(':id')
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async getPermission(@Param('id', ParseIntPipe) id: number) {
     return this.permissionQueryService.getPermissionById(id);
   }
 
   @Get()
+  @Roles('ADMINISTRADOR', 'ADMINISTRACION')
   async listPermissions(
     @Query() filters: ListPermissionFilterDto,
   ): Promise<PermissionResponseDto[]> {

@@ -11,6 +11,7 @@ import {
   Inject,
   Get,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ISupplierCommandPort,
@@ -27,7 +28,11 @@ import {
   SupplierListResponse,
   SupplierResponseDto,
 } from '../../../../application/dto/out';
+import { JwtAuthGuard } from 'libs/common/src/infrastructure/guard/jwt-auth.guard';
+import { RoleGuard } from 'libs/common/src/infrastructure/guard/roles.guard';
+import { Roles } from 'libs/common/src/infrastructure/decorators/roles.decorators';
 
+@UseGuards(JwtAuthGuard, RoleGuard)
 @Controller('suppliers')
 export class SupplierRestController {
   constructor(
@@ -39,6 +44,7 @@ export class SupplierRestController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CREAR_PROVEEDORES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async registerSupplier(
     @Body() registerDto: RegisterSupplierDto,
   ): Promise<SupplierResponseDto> {
@@ -47,6 +53,7 @@ export class SupplierRestController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_PROVEEDORES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async updateSupplier(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Omit<UpdateSupplierDto, 'id_proveedor'>,
@@ -60,6 +67,7 @@ export class SupplierRestController {
 
   @Put(':id/status')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_PROVEEDORES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async changeSupplierStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() statusDto: { estado: boolean },
@@ -73,6 +81,7 @@ export class SupplierRestController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @Roles('CREAR_PROVEEDORES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async deleteSupplier(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SupplierDeletedResponseDto> {
@@ -80,11 +89,13 @@ export class SupplierRestController {
   }
 
   @Get(':id')
+  @Roles('CREAR_PROVEEDORES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async getSupplier(@Param('id', ParseIntPipe) id: number) {
     return this.supplierQueryService.getSupplierById(id);
   }
 
   @Get()
+  @Roles('CREAR_PROVEEDORES', 'ADMINISTRADOR', 'ADMINISTRACION')
   async listSuppliers(
     @Query() filters: ListSupplierFilterDto,
   ): Promise<SupplierListResponse> {
